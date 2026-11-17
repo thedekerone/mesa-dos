@@ -17,7 +17,8 @@ const core = JSON.parse('[' + sw.match(/var CORE = \[([\s\S]*?)\];/)[1] + ']');
 const html = read('index.html');
 const manifest = JSON.parse(read('manifest.json'));
 
-const missing = core.filter(f => f !== './' && !fs.existsSync(path.join(root, f)));
+const fileOf = f => f.split('?')[0];   /* asset URLs carry a ?v= cache-buster */
+const missing = core.filter(f => f !== './' && !fs.existsSync(path.join(root, fileOf(f))));
 check('every file in CORE exists', missing.length === 0, missing.join(', '));
 check('CORE covers the page itself', core.includes('./') && core.includes('index.html'));
 
