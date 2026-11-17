@@ -68,7 +68,12 @@
   }
 
   /* ---------- words and numbers ---------- */
-  var CUIS = { peru: { en: "Peruvian", fi: "Perulainen" }, asia: { en: "Asian", fi: "Aasialainen" }, europe: { en: "European", fi: "Eurooppalainen" } };
+  var CUIS = {
+    peru: { en: "Peruvian", fi: "Perulainen" }, mexico: { en: "Mexican", fi: "Meksikolainen" },
+    asia: { en: "Asian", fi: "Aasialainen" }, india: { en: "Indian", fi: "Intialainen" },
+    mideast: { en: "Middle Eastern", fi: "Lähi-idän" }, europe: { en: "European", fi: "Eurooppalainen" },
+    nordic: { en: "Nordic", fi: "Pohjoismainen" }
+  };
   function L() { return state.lang; }
   function S(k, vars) {
     var v = SLOTS[L()][k];
@@ -318,10 +323,12 @@
       '<div class="screen-only">' +
         '<header class="head"><h1>' + S("navWeek") + '</h1><p class="head-sub">' + esc(range(mon)) + '</p></header>' +
         weekSeg("week", mon) +
-        '<p class="note" lang="en">' + esc(WEEK_NOTE[wk]) + '</p>' +
+        '<p class="note">' + S("weekVisits", { list: M.weekCuisines(mon).map(function (c) { return CUIS[c][L()]; }).join(", ") }) + '</p>' +
         '<ol class="wdays">' + rows + '</ol>' +
         '<div class="actions"><a class="btn" href="#/shop/' + M.iso(mon) + '">' + S("openList") + '</a>' +
           '<button class="btn btn-quiet" data-print>' + S("printWeek") + '</button></div>' +
+        '<p class="pager"><a href="#/week/' + M.iso(M.addDays(mon, -7)) + '">‹ ' + S("week") + ' ' + M.weekOf(M.addDays(mon, -7)) + '</a>' +
+          '<a href="#/week/' + M.iso(M.addDays(mon, 7)) + '">' + S("week") + ' ' + M.weekOf(M.addDays(mon, 7)) + ' ›</a></p>' +
       '</div>' +
       /* the same week as one table; only the print stylesheet shows it */
       '<div class="fridge"><div class="fridge-head"><h2>Mesa Dos, ' + S("week") + ' ' + esc(wk) + '</h2><p>' + esc(range(mon)) + '</p></div>' +
@@ -433,7 +440,7 @@
 
   /* ---------- recipes ---------- */
   var MEALS = ["all", "dinner", "breakfast", "lunch", "snack"];
-  var CUISINES = ["all", "peru", "asia", "europe"];
+  var CUISINES = ["all", "peru", "mexico", "asia", "india", "mideast", "europe", "nordic"];
   var MEAL_KEY = { all: "mealAll", dinner: "mealDinner", breakfast: "mealBreakfast", lunch: "mealLunch", snack: "mealSnack" };
 
   function chip(attr, value, label, on) {

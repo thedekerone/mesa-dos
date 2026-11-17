@@ -5,7 +5,7 @@ const path = require('path');
 
 const root = path.join(__dirname, '..');
 const SCRIPTS = ['i18n.js', 'recipes.js', 'plan.js', 'household.js', 'shopping.js', 'core.js'];
-const GLOBALS = ['I18N', 'I18N_WORDS', 'UNITS', 'SLOTS', 'RECIPES', 'ROTATION_START', 'PLAN', 'WEEK_NOTE',
+const GLOBALS = ['I18N', 'I18N_WORDS', 'UNITS', 'SLOTS', 'RECIPES', 'ROTATION_START', 'DAY_KCAL', 'COOK_DOUBLE', 'TOPUPS',
   'PEOPLE', 'AISLE_ORDER', 'STORES', 'PRODUCTS', 'PANTRY', 'BUY', 'MESA'];
 
 function read(file) { return fs.readFileSync(path.join(root, file), 'utf8'); }

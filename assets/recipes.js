@@ -2,11 +2,13 @@
    serves: how many standard portions the ingredient list makes. Dinners are written for the
    two of you (the minestrone makes four: two dinners, two lunches); breakfasts, snacks and
    most lunches are written for one. kcal / protein / fibre are per portion, estimated.
-   ahead: something that has to happen the night before. from: a lunch built on a dinner. */
+   ahead: something that has to happen the night before. from: a lunch built on a dinner.
+   Dinners also carry main (what the protein is — the weekly plan spreads these out) and
+   keeps:1 when the dish is good as the next day's lunch. */
 const RECIPES = [
 /* ============================ DINNERS ============================ */
 {
-  id:"a1", meal:"dinner", serves:2, cuisine:"peru", name:"Lomo saltado, light",
+  id:"a1", meal:"dinner", main:"beef", keeps:1, serves:2, cuisine:"peru", name:"Lomo saltado, light",
   short:"Peru's stir-fried beef and chips, with oven fries instead of the deep fryer.",
   time:35, kcal:520, protein:41, fibre:6,
   ingredients:[
@@ -34,7 +36,7 @@ const RECIPES = [
   why:"41 g protein and a big volume of vegetables for 520 kcal. Beef once a week is fine; it keeps the plan from feeling like chicken prison."
 },
 {
-  id:"a2", meal:"dinner", serves:2, cuisine:"peru", name:"Pollo a la brasa with aji verde",
+  id:"a2", meal:"dinner", main:"chicken", serves:2, cuisine:"peru", name:"Pollo a la brasa with aji verde",
   short:"Peru's rotisserie chicken, oven-roasted, with a yoghurt-green-chilli sauce.",
   time:45, kcal:470, protein:44, fibre:7,
   ingredients:[
@@ -63,7 +65,7 @@ const RECIPES = [
   why:"Chicken thighs stay juicy at high heat, so you eat less sauce to fix dryness. 44 g protein."
 },
 {
-  id:"a3", meal:"dinner", serves:2, ahead:"Move the frozen fish to the fridge tonight. It has to thaw slowly, never on the counter.", cuisine:"peru", name:"Ceviche with sweet potato and corn",
+  id:"a3", meal:"dinner", main:"fish", serves:2, ahead:"Move the frozen fish to the fridge tonight. It has to thaw slowly, never on the counter.", cuisine:"peru", name:"Ceviche with sweet potato and corn",
   short:"Lime-cured fish, red onion, chilli — Peru's national dish, no cooking required.",
   time:25, kcal:420, protein:33, fibre:7,
   ingredients:[
@@ -88,7 +90,7 @@ const RECIPES = [
   why:"Lean protein with almost no fat, and the sweet potato makes it a full meal instead of a starter."
 },
 {
-  id:"a4", meal:"dinner", serves:2, cuisine:"asia", name:"Miso-glazed salmon with pak choi",
+  id:"a4", meal:"dinner", main:"fish", keeps:1, serves:2, cuisine:"asia", name:"Miso-glazed salmon with pak choi",
   short:"Sticky-sweet salmon under the grill, greens in the same pan, rice underneath.",
   time:25, kcal:540, protein:36, fibre:5,
   ingredients:[
@@ -115,7 +117,7 @@ const RECIPES = [
   why:"Fatty fish twice a week is the one thing most weight-loss plans get right. Rice portion is measured, not guessed."
 },
 {
-  id:"a5", meal:"dinner", serves:2, cuisine:"asia", name:"Korean chicken lettuce wraps",
+  id:"a5", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"asia", name:"Korean chicken lettuce wraps",
   short:"Gochujang chicken mince, crunchy vegetables, iceberg as the wrap.",
   time:20, kcal:430, protein:42, fibre:5,
   ingredients:[
@@ -143,7 +145,7 @@ const RECIPES = [
   why:"42 g protein for 430 kcal, and lettuce replaces the rice so you get volume instead of density. Add 1 dl rice each if you trained that day."
 },
 {
-  id:"a6", meal:"dinner", serves:2, ahead:"Move the frozen fish to the fridge tonight so it is thawed for dinner.", cuisine:"peru", name:"Baked cod with salsa criolla",
+  id:"a6", meal:"dinner", main:"fish", serves:2, ahead:"Move the frozen fish to the fridge tonight so it is thawed for dinner.", cuisine:"peru", name:"Baked cod with salsa criolla",
   short:"White fish, quinoa, and a sharp red-onion salsa that does all the flavouring.",
   time:30, kcal:430, protein:38, fibre:7,
   ingredients:[
@@ -169,7 +171,7 @@ const RECIPES = [
   why:"Very lean protein, and quinoa gives you fibre and a slow carbohydrate so you're not hunting the cupboard at 21:00."
 },
 {
-  id:"a7", meal:"dinner", serves:2, cuisine:"europe", name:"Greek chicken traybake",
+  id:"a7", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"europe", name:"Greek chicken traybake",
   short:"One tray, one oven, lemon-oregano chicken with bulgur and feta.",
   time:35, kcal:500, protein:46, fibre:8,
   ingredients:[
@@ -198,7 +200,7 @@ const RECIPES = [
 
 /* ---------------- week B ---------------- */
 {
-  id:"b1", meal:"dinner", serves:2, cuisine:"peru", name:"Ají de gallina, lighter",
+  id:"b1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"peru", name:"Ají de gallina, lighter",
   short:"Peru's creamy shredded-chicken stew, built on quark instead of evaporated milk.",
   time:40, kcal:510, protein:40, fibre:5,
   ingredients:[
@@ -226,7 +228,7 @@ const RECIPES = [
   why:"Classic aji de gallina is cream, bread and oil. This version keeps the colour and silkiness at 510 kcal with 40 g protein."
 },
 {
-  id:"b2", meal:"dinner", serves:2, cuisine:"peru", name:"Causa limeña with tuna",
+  id:"b2", meal:"dinner", main:"fish", serves:2, cuisine:"peru", name:"Causa limeña with tuna",
   short:"Cold lime-and-chilli potato cake layered with tuna and avocado.",
   time:35, kcal:450, protein:32, fibre:7,
   ingredients:[
@@ -251,7 +253,7 @@ const RECIPES = [
   why:"Potato gets a bad name, but boiled and cooled it's filling for 450 kcal, and the tuna-quark layer does the protein."
 },
 {
-  id:"b3", meal:"dinner", serves:2, cuisine:"asia", name:"Asian pork meatballs with noodles",
+  id:"b3", meal:"dinner", main:"pork", keeps:1, serves:2, cuisine:"asia", name:"Asian pork meatballs with noodles",
   short:"Ginger-soy meatballs, rice noodles and a pile of crunchy vegetables.",
   time:30, kcal:540, protein:36, fibre:6,
   ingredients:[
@@ -279,7 +281,7 @@ const RECIPES = [
   why:"540 kcal is a big dinner by this plan's standards, which is exactly why it's here — one satisfying bowl beats three small snacks."
 },
 {
-  id:"b4", meal:"dinner", serves:2, cuisine:"asia", name:"Green curry with chicken",
+  id:"b4", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"asia", name:"Green curry with chicken",
   short:"Light coconut milk, curry paste, chicken and whatever vegetables are in the drawer.",
   time:30, kcal:520, protein:38, fibre:6,
   ingredients:[
@@ -305,7 +307,7 @@ const RECIPES = [
   why:"38 g protein and a genuinely satisfying bowl. Curry paste is a flavour shortcut that costs nothing in calories."
 },
 {
-  id:"b5", meal:"dinner", serves:4, cuisine:"europe", name:"Minestrone with white beans",
+  id:"b5", meal:"dinner", main:"veg", keeps:1, serves:4, cuisine:"europe", name:"Minestrone with white beans",
   short:"A big pot of Italian vegetable soup — dinner tonight, lunch tomorrow.",
   time:35, kcal:380, protein:20, fibre:12,
   ingredients:[
@@ -334,7 +336,7 @@ const RECIPES = [
   why:"380 kcal for a bowl this big, 12 g fibre. The beans are what stop it being a sad vegetable broth."
 },
 {
-  id:"b6", meal:"dinner", serves:2, cuisine:"europe", name:"Baked feta and tomato pasta",
+  id:"b6", meal:"dinner", main:"veg", keeps:1, serves:2, cuisine:"europe", name:"Baked feta and tomato pasta",
   short:"The viral one, done with wholewheat pasta and half the feta.",
   time:30, kcal:520, protein:24, fibre:9,
   ingredients:[
@@ -359,7 +361,7 @@ const RECIPES = [
   why:"24 g protein, 9 g fibre, and it's the meal that makes a diet feel like normal life. Add a boiled egg on the side if you need more protein."
 },
 {
-  id:"b7", meal:"dinner", serves:2, cuisine:"asia", name:"Quick chicken pho",
+  id:"b7", meal:"dinner", main:"chicken", serves:2, cuisine:"asia", name:"Quick chicken pho",
   short:"A 35-minute broth with star anise and charred ginger — Vietnam in a bowl.",
   time:35, kcal:430, protein:38, fibre:4,
   ingredients:[
@@ -386,6 +388,450 @@ const RECIPES = [
   ],
   tip:"Real pho simmers for hours. This one cheats with fondi and charred aromatics and lands 80% of the way there on a Tuesday.",
   why:"430 kcal, 38 g protein, and a litre of broth is filling in a way solid food isn't."
+},
+
+/* ---------------- the wider world: Mexico, India, the Middle East, Japan, Thailand, China, the North ---------------- */
+{
+  id:"m1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"mexico", name:"Chicken tinga tacos",
+  short:"Shredded chicken in a smoky tomato sauce, with a sharp cabbage slaw.",
+  time:35, kcal:550, protein:48, fibre:8,
+  ingredients:[
+    {t:"Kanan filee", n:350, u:"g", s:1},
+    {t:"Tomaattimurska", n:200, u:"g", s:1},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Valkosipuli", n:2, u:"kynttä"},
+    {t:"Paprikajauhe", n:2, u:"tl"},
+    {t:"Chili flakes", n:"½", u:"tl"},
+    {t:"Tortilla, täysjyvä", n:4, u:"kpl"},
+    {t:"Punakaali", n:200, u:"g", s:1},
+    {t:"Lime", n:1, u:"kpl"},
+    {t:"Turkkilainen jogurtti", n:100, u:"g", s:1},
+    {t:"Korianteri", n:1, u:"kourallinen"},
+    {t:"Oliiviöljy", n:1, u:"tl"},
+    {t:"Suola, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Simmer the chicken in salted water 15 min. Lift it out, keep a cup of the water, and pull the meat apart with two forks.",
+    "Soften sliced onion and garlic in the oil, 5 min. Add paprika and chilli for 30 s, then the tomato and a splash of the poaching water. Simmer 8 min.",
+    "Stir the chicken into the sauce and cook until it clings, 5 min. Salt it properly.",
+    "Slice the cabbage as thin as you can and squeeze it hard with lime juice and salt.",
+    "Warm the tortillas in a dry pan. Chicken, slaw, a spoon of yoghurt, coriander."
+  ],
+  tip:"Tinga is made with chipotle, which is hard to find here. Smoked paprika (savupaprika) from the spice shelf gets close; ordinary paprika plus chilli is fine.",
+  why:"Two tacos each and a lot of slaw: it eats like street food and lands at 550 kcal."
+},
+{
+  id:"m2", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"mexico", name:"Chicken chilli with beans",
+  short:"A pot of mince, kidney beans and tomato that is better the next day.",
+  time:35, kcal:520, protein:44, fibre:14,
+  ingredients:[
+    {t:"Kanan jauheliha", n:300, u:"g", s:1},
+    {t:"Kidneypavut, säilyke", n:1, u:"tlk"},
+    {t:"Tomaattimurska", n:400, u:"g", s:1},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Paprika", n:1, u:"kpl"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Pakastemaissi", n:100, u:"g", s:1},
+    {t:"Jeera jauhettuna", n:2, u:"tl"},
+    {t:"Paprikajauhe", n:2, u:"tl"},
+    {t:"Chili", n:1, u:"kpl"},
+    {t:"Turkkilainen jogurtti", n:60, u:"g", s:1},
+    {t:"Lime", n:1, u:"kpl"},
+    {t:"Korianteri", n:1, u:"kourallinen"},
+    {t:"Oliiviöljy", n:1, u:"tl"}
+  ],
+  steps:[
+    "Brown the mince hard in a wide pot with the oil until the water has cooked off, 6–8 min.",
+    "Add chopped onion, pepper, garlic and chilli. Cook 5 min, then the cumin and paprika for 1 min.",
+    "Add tomato, drained beans and half a tin of water. Simmer 20 min with the lid ajar until thick.",
+    "Stir in the corn for the last 3 min. Season with salt and lime juice.",
+    "Serve in bowls with yoghurt and coriander."
+  ],
+  tip:"It thickens overnight. Loosen tomorrow's portion with a splash of water when you reheat it.",
+  why:"14 g fibre and 44 g protein in one bowl, and no rice needed: the beans are the starch."
+},
+{
+  id:"m3", meal:"dinner", main:"fish", serves:2, ahead:"Move the frozen fish to the fridge tonight so it is thawed for dinner.", cuisine:"mexico", name:"Fish tacos with lime slaw",
+  short:"Spiced white fish from the oven, crunchy cabbage, yoghurt and lime.",
+  time:25, kcal:520, protein:45, fibre:8,
+  ingredients:[
+    {t:"Seiti, turska or pangasius (pakaste ok)", n:400, u:"g", s:1},
+    {t:"Paprikajauhe", n:1, u:"tl"},
+    {t:"Jeera jauhettuna", n:1, u:"tl"},
+    {t:"Tortilla, täysjyvä", n:4, u:"kpl"},
+    {t:"Punakaali", n:200, u:"g", s:1},
+    {t:"Porkkana", n:1, u:"kpl"},
+    {t:"Lime", n:2, u:"kpl"},
+    {t:"Turkkilainen jogurtti", n:100, u:"g", s:1},
+    {t:"Chili", n:"½", u:"kpl"},
+    {t:"Korianteri", n:1, u:"kourallinen"},
+    {t:"Oliiviöljy", n:1, u:"rkl"},
+    {t:"Suola, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Oven 220 °C. Rub the fish with oil, paprika, cumin and salt. Bake on a lined tray 10–12 min until it flakes.",
+    "Shred the cabbage and grate the carrot. Squeeze with the juice of one lime and a good pinch of salt.",
+    "Stir the yoghurt with the rest of the lime juice and the chopped chilli.",
+    "Warm the tortillas in a dry pan.",
+    "Flake the fish into the tortillas, pile on the slaw, spoon the yoghurt over, finish with coriander."
+  ],
+  tip:"Frozen seiti works well here because the spices and the lime do the talking.",
+  why:"45 g of lean protein, and the slaw is most of the volume."
+},
+{
+  id:"i1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"india", name:"Chicken tikka masala, lighter",
+  short:"Yoghurt-marinated chicken in a spiced tomato sauce, with rice and spinach.",
+  time:40, kcal:540, protein:52, fibre:6,
+  ingredients:[
+    {t:"Kanan filee", n:400, u:"g", s:1},
+    {t:"Turkkilainen jogurtti", n:100, u:"g", s:1},
+    {t:"Garam masala", n:1, u:"rkl"},
+    {t:"Kurkuma", n:1, u:"tl"},
+    {t:"Tomaattimurska", n:400, u:"g", s:1},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Inkivääri, raastettu", n:1, u:"rkl"},
+    {t:"Pinaatti", n:100, u:"g", s:1},
+    {t:"Täysjyväriisi", n:1, u:"dl"},
+    {t:"Oliiviöljy", n:1, u:"tl"},
+    {t:"Korianteri", n:1, u:"kourallinen"}
+  ],
+  steps:[
+    "Cut the chicken into chunks and mix with half the yoghurt, half the garam masala, the turmeric and salt. Leave it while you do the rest.",
+    "Rice on: 1 dl with 2 dl water, lid on, 12 min, then rest 10 min.",
+    "Soften chopped onion in the oil 6 min. Add garlic, ginger and the rest of the garam masala for 1 min, then the tomato. Simmer 10 min.",
+    "Sear the chicken in a hot dry non-stick pan until it catches in places, 5 min, then move it into the sauce. Simmer 8 min.",
+    "Off the heat, stir in the spinach and the rest of the yoghurt. Serve over rice with coriander."
+  ],
+  tip:"Garam masala is on the Santa Maria spice shelf in every Prisma. A jar of tikka masala paste works too: use 2 rkl and skip the dry spices.",
+  why:"The restaurant version is cream and butter. Yoghurt gives the same tang for a fraction of the fat."
+},
+{
+  id:"i2", meal:"dinner", main:"veg", keeps:1, serves:2, cuisine:"india", name:"Red lentil dal with spinach",
+  short:"Twenty minutes, one pot, and the cheapest dinner on the plan.",
+  time:25, kcal:490, protein:28, fibre:14,
+  ingredients:[
+    {t:"Punaiset linssit", n:200, u:"g", s:1},
+    {t:"Kookosmaito, kevyt", n:200, u:"ml", s:1},
+    {t:"Tomaattimurska", n:200, u:"g", s:1},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Inkivääri, raastettu", n:1, u:"rkl"},
+    {t:"Kurkuma", n:1, u:"tl"},
+    {t:"Jeera jauhettuna", n:1, u:"tl"},
+    {t:"Garam masala", n:1, u:"tl"},
+    {t:"Pinaatti", n:150, u:"g", s:1},
+    {t:"Lime", n:1, u:"kpl"},
+    {t:"Turkkilainen jogurtti", n:50, u:"g", s:1},
+    {t:"Oliiviöljy", n:1, u:"tl"}
+  ],
+  steps:[
+    "Soften chopped onion in the oil 5 min. Add garlic, ginger and the spices and fry 1 min until it smells toasted.",
+    "Add rinsed lentils, tomato, coconut milk and 5 dl water. Simmer 15 min, stirring now and then, until the lentils collapse.",
+    "Stir in the spinach until it wilts. Salt generously: lentils need it.",
+    "Finish with lime juice. Serve with a spoon of yoghurt."
+  ],
+  tip:"Red lentils need no soaking and cook in 15 minutes. The rest of the coconut milk keeps four days in the fridge, or freeze it in an ice-cube tray.",
+  why:"14 g fibre and no meat. It costs about two euros a head."
+},
+{
+  id:"j2", meal:"dinner", main:"veg", keeps:1, serves:2, cuisine:"asia", name:"Teriyaki tofu rice bowl",
+  short:"Crisp tofu in a sticky soy glaze over rice, broccoli and edamame.",
+  time:30, kcal:500, protein:37, fibre:9,
+  ingredients:[
+    {t:"Tofu, maustamaton", n:270, u:"g", s:1},
+    {t:"Soijakastike", n:2, u:"rkl"},
+    {t:"Hunaja", n:2, u:"tl"},
+    {t:"Riisiviinietikka", n:1, u:"tl"},
+    {t:"Inkivääri, raastettu", n:1, u:"tl"},
+    {t:"Valkosipuli", n:1, u:"kynttä"},
+    {t:"Parsakaali", n:300, u:"g", s:1},
+    {t:"Edamame, pakaste", n:100, u:"g", s:1},
+    {t:"Porkkana", n:1, u:"kpl"},
+    {t:"Täysjyväriisi", n:1, u:"dl"},
+    {t:"Seesamiöljy", n:1, u:"tl"},
+    {t:"Seesaminsiemenet", n:1, u:"rkl"}
+  ],
+  steps:[
+    "Rice on: 1 dl with 2 dl water, lid on, 12 min, then rest 10 min.",
+    "Press the tofu between two plates for a few minutes, then cut into cubes. Fry in the sesame oil over high heat until golden on most sides, 8 min.",
+    "Stir soy, honey, vinegar, ginger and crushed garlic together. Pour over the tofu and let it bubble down to a glaze, 1–2 min.",
+    "Steam the broccoli and edamame 4 min. Cut the carrot into ribbons with a peeler.",
+    "Bowls: rice, vegetables, tofu, the last of the glaze, sesame seeds."
+  ],
+  tip:"Jalotofu is in the chilled aisle near the vegetarian products. Pressing the water out is what lets it crisp instead of steam.",
+  why:"37 g protein without meat, mostly from the tofu and edamame."
+},
+{
+  id:"e1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"mideast", name:"Chicken shawarma bowl",
+  short:"Warm-spiced chicken, bulgur, chopped salad and a garlic yoghurt.",
+  time:35, kcal:490, protein:52, fibre:8,
+  ingredients:[
+    {t:"Kanan filee", n:400, u:"g", s:1},
+    {t:"Jeera jauhettuna", n:2, u:"tl"},
+    {t:"Paprikajauhe", n:2, u:"tl"},
+    {t:"Kurkuma", n:"½", u:"tl"},
+    {t:"Kaneli", n:"½", u:"tl"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Sitruuna", n:1, u:"kpl"},
+    {t:"Bulgur", n:1, u:"dl"},
+    {t:"Tomaatti", n:2, u:"kpl"},
+    {t:"Kurkku", n:"½", u:"kpl"},
+    {t:"Punasipuli", n:"½", u:"kpl"},
+    {t:"Turkkilainen jogurtti", n:100, u:"g", s:1},
+    {t:"Oliiviöljy", n:1, u:"tl"},
+    {t:"Salaattilehdet", n:"", u:"kourallinen"}
+  ],
+  steps:[
+    "Slice the chicken thin. Toss with the spices, two crushed garlic cloves, half the lemon juice, the oil and salt.",
+    "Bulgur: pour 2 dl boiling water over 1 dl bulgur, cover, 12 min, then fluff with salt.",
+    "Cook the chicken in a very hot pan in one layer, 3 min a side, until the edges char.",
+    "Dice tomato and cucumber, slice the onion thin, dress with lemon and salt.",
+    "Stir the last garlic clove into the yoghurt with a pinch of salt. Bowls: bulgur, leaves, salad, chicken, yoghurt."
+  ],
+  tip:"The four spices together are the whole shawarma flavour. Mix a jar of it and the next time takes two minutes.",
+  why:"52 g protein, the highest on the plan, for under 500 kcal."
+},
+{
+  id:"e2", meal:"dinner", main:"veg", serves:2, cuisine:"mideast", name:"Shakshuka with feta",
+  short:"Eggs poached in a spiced tomato and pepper sauce, eaten from the pan with rye.",
+  time:25, kcal:510, protein:28, fibre:11,
+  ingredients:[
+    {t:"Tomaattimurska", n:400, u:"g", s:1},
+    {t:"Paprika", n:1, u:"kpl"},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Jeera jauhettuna", n:1, u:"tl"},
+    {t:"Paprikajauhe", n:2, u:"tl"},
+    {t:"Chili flakes", n:"½", u:"tl"},
+    {t:"Kananmuna", n:4, u:"kpl"},
+    {t:"Feta (kevyt)", n:60, u:"g", s:1},
+    {t:"Ruisleipä", n:4, u:"viipaletta"},
+    {t:"Oliiviöljy", n:1, u:"rkl"},
+    {t:"Korianteri", n:1, u:"kourallinen"}
+  ],
+  steps:[
+    "Soften sliced onion and pepper in the oil 8 min. Add garlic and the spices for 1 min.",
+    "Add the tomato and a splash of water. Simmer 8 min until thick enough to hold a dent. Season.",
+    "Make four dents and crack an egg into each. Lid on, 5–6 min, until the whites are set and the yolks still move.",
+    "Crumble feta over, scatter coriander. Bring the pan to the table with toasted rye."
+  ],
+  tip:"Take it off the heat while the yolks still wobble. They keep cooking in the sauce.",
+  why:"The meatless dinner that does not feel like one, done in a single pan."
+},
+{
+  id:"e3", meal:"dinner", main:"beef", keeps:1, serves:2, cuisine:"mideast", name:"Beef kofta with tzatziki",
+  short:"Cumin-and-mint meatballs, bulgur and a cold cucumber yoghurt.",
+  time:35, kcal:540, protein:39, fibre:8,
+  ingredients:[
+    {t:"Naudan jauheliha 10%", n:300, u:"g", s:1},
+    {t:"Sipuli", n:"½", u:"kpl"},
+    {t:"Valkosipuli", n:2, u:"kynttä"},
+    {t:"Jeera jauhettuna", n:2, u:"tl"},
+    {t:"Kaneli", n:"½", u:"tl"},
+    {t:"Minttu", n:1, u:"ruukku"},
+    {t:"Bulgur", n:1, u:"dl"},
+    {t:"Turkkilainen jogurtti", n:150, u:"g", s:1},
+    {t:"Kurkku", n:1, u:"kpl"},
+    {t:"Tomaatti", n:2, u:"kpl"},
+    {t:"Punasipuli", n:"½", u:"kpl"},
+    {t:"Sitruuna", n:1, u:"kpl"},
+    {t:"Suola, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Oven 220 °C. Mix the mince with grated onion, one crushed garlic clove, cumin, cinnamon, half the chopped mint and salt. Shape 8 short sausages.",
+    "Bake on a lined tray 12–14 min, turning once, until browned.",
+    "Bulgur: pour 2 dl boiling water over 1 dl bulgur, cover, 12 min, then fluff with lemon and salt.",
+    "Tzatziki: grate half the cucumber, squeeze the water out, stir into the yoghurt with the other garlic clove and the rest of the mint.",
+    "Chop the remaining cucumber with tomato and red onion. Serve everything together with lemon wedges."
+  ],
+  tip:"Grating the onion instead of chopping it keeps the kofta juicy without adding fat.",
+  why:"Red meat for the second time in the rotation, in a portion that fits the day."
+},
+{
+  id:"j1", meal:"dinner", main:"chicken", serves:2, cuisine:"asia", name:"Oyakodon",
+  short:"Japan's chicken-and-egg rice bowl: sweet soy broth, soft eggs, fifteen minutes.",
+  time:20, kcal:490, protein:48, fibre:3,
+  ingredients:[
+    {t:"Kanan filee", n:300, u:"g", s:1},
+    {t:"Kananmuna", n:3, u:"kpl"},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Soijakastike", n:2, u:"rkl"},
+    {t:"Hunaja", n:2, u:"tl"},
+    {t:"Kanaliemi", n:2, u:"dl"},
+    {t:"Täysjyväriisi", n:1, u:"dl"},
+    {t:"Pinaatti", n:100, u:"g", s:1},
+    {t:"Kevätsipuli", n:2, u:"kpl"}
+  ],
+  steps:[
+    "Rice on: 1 dl with 2 dl water, lid on, 12 min, then rest 10 min.",
+    "Simmer the stock, soy and honey in a small pan with the sliced onion, 5 min.",
+    "Add the chicken in thin slices and simmer 5 min until just cooked. Drop the spinach on top to wilt.",
+    "Beat the eggs loosely and pour them over in a spiral. Lid on, 1 min, then off the heat while they are still soft.",
+    "Slide it over the rice, broth and all. Spring onion on top."
+  ],
+  tip:"The real thing uses dashi and mirin. Chicken stock and a little honey are the Finnish-supermarket version, and it is close.",
+  why:"48 g protein from two cheap things, and the broth soaks the rice so it needs no sauce."
+},
+{
+  id:"n1", meal:"dinner", main:"fish", keeps:1, serves:2, cuisine:"nordic", name:"Lohikeitto, lighter",
+  short:"Finnish salmon soup with potato, leek and dill, made with milk instead of cream.",
+  time:35, kcal:550, protein:37, fibre:7,
+  ingredients:[
+    {t:"Kirjolohi filee", n:250, u:"g", s:1},
+    {t:"Peruna", n:400, u:"g", s:1},
+    {t:"Porkkana", n:1, u:"kpl"},
+    {t:"Purjo", n:1, u:"kpl"},
+    {t:"Kalaliemi", n:7, u:"dl"},
+    {t:"Maito (kevyt)", n:2, u:"dl"},
+    {t:"Tilli", n:1, u:"ruukku"},
+    {t:"Ruisleipä", n:2, u:"viipaletta"},
+    {t:"Oliiviöljy or voi", n:1, u:"tl"},
+    {t:"Suola, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Soften the sliced leek in the butter, 4 min, without colouring it.",
+    "Add diced potato, carrot and the stock. Simmer 12–15 min until the potato is just soft.",
+    "Cut the salmon into large cubes, skin off. Lower them in and simmer 4 min, no more.",
+    "Add the milk and warm through without boiling. Stir in most of the dill, season with salt and white or black pepper.",
+    "Rest it 5 min off the heat. Serve with rye bread and the rest of the dill."
+  ],
+  tip:"Do not stir after the fish goes in or it breaks up. It is better reheated, which is why it is tomorrow's lunch too.",
+  why:"The cream in the classic is about 200 kcal a bowl. Milk and a floury potato give nearly the same body."
+},
+{
+  id:"n2", meal:"dinner", main:"beef", keeps:1, serves:2, cuisine:"nordic", name:"Oven meatballs with root mash",
+  short:"Lihapullat from the oven, potato-and-carrot mash, lingonberries.",
+  time:40, kcal:560, protein:42, fibre:8,
+  ingredients:[
+    {t:"Naudan jauheliha 10%", n:300, u:"g", s:1},
+    {t:"Kananmuna", n:1, u:"kpl"},
+    {t:"Kaurahiutale", n:30, u:"g", s:1},
+    {t:"Sipuli", n:"½", u:"kpl"},
+    {t:"Maito (kevyt)", n:1, u:"dl"},
+    {t:"Peruna", n:300, u:"g", s:1},
+    {t:"Porkkana", n:3, u:"kpl"},
+    {t:"Puolukka (pakaste or hillo)", n:80, u:"g", s:1},
+    {t:"Kurkku", n:"½", u:"kpl"},
+    {t:"Salaattilehdet", n:"", u:"kourallinen"},
+    {t:"Suola, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Oven 220 °C. Soak the oats in half the milk 5 min. Mix with the mince, egg, grated onion, salt and pepper.",
+    "Roll 14 balls with wet hands. Bake on a lined tray 15 min until browned.",
+    "Boil potato and carrot together in salted water until soft, 15 min. Mash with the rest of the milk, salt and pepper.",
+    "Slice the cucumber and toss with the leaves.",
+    "Meatballs on mash, lingonberries beside them, salad on the side."
+  ],
+  tip:"Oats instead of breadcrumbs and cream is the old Finnish way, and it happens to be the lighter one. Frozen lingonberries beat the jam, which is half sugar.",
+  why:"A Finnish Sunday dinner in a weekday portion."
+},
+{
+  id:"it1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"europe", name:"Chicken bolognese",
+  short:"A proper ragù on chicken mince, half pasta and half courgette.",
+  time:40, kcal:550, protein:43, fibre:9,
+  ingredients:[
+    {t:"Kanan jauheliha", n:300, u:"g", s:1},
+    {t:"Tomaattimurska", n:400, u:"g", s:1},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Porkkana", n:1, u:"kpl"},
+    {t:"Selleri (if you have it)", n:1, u:"varsi"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Oregano, kuivattu", n:2, u:"tl"},
+    {t:"Täysjyväpasta", n:100, u:"g", s:1},
+    {t:"Kesäkurpitsa", n:1, u:"kpl"},
+    {t:"Parmesan (or Grana Padano)", n:20, u:"g", s:1},
+    {t:"Oliiviöljy", n:1, u:"tl"},
+    {t:"Basilika", n:1, u:"ruukku"}
+  ],
+  steps:[
+    "Chop onion, carrot and celery small. Soften in the oil with a pinch of salt, 8 min.",
+    "Push them aside, brown the mince properly, then add garlic and oregano for 1 min.",
+    "Add the tomato and half a tin of water. Simmer 20 min, lid ajar, until thick.",
+    "Boil the pasta. Cut the courgette into ribbons with a peeler and drop them into the pasta water for the last minute.",
+    "Toss pasta and courgette through the sauce with a splash of pasta water. Parmesan and basil on top."
+  ],
+  tip:"The courgette ribbons disappear into the pasta. You get a full bowl on 50 g of pasta each.",
+  why:"Comfort food that reheats well, with 43 g protein."
+},
+{
+  id:"es1", meal:"dinner", main:"fish", serves:2, cuisine:"europe", name:"Quick prawn paella",
+  short:"Saffron-yellow rice with prawns, peas and pepper, in one wide pan.",
+  time:35, kcal:510, protein:39, fibre:7,
+  ingredients:[
+    {t:"Katkaravut, pakaste (kuoritut)", n:300, u:"g", s:1},
+    {t:"Täysjyväriisi", n:1.5, u:"dl"},
+    {t:"Paprika", n:1, u:"kpl"},
+    {t:"Sipuli", n:1, u:"kpl"},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Tomaattimurska", n:200, u:"g", s:1},
+    {t:"Pakasteherneet", n:100, u:"g", s:1},
+    {t:"Kurkuma", n:1, u:"tl"},
+    {t:"Paprikajauhe", n:2, u:"tl"},
+    {t:"Kanaliemi", n:4, u:"dl"},
+    {t:"Sitruuna", n:1, u:"kpl"},
+    {t:"Oliiviöljy", n:1, u:"rkl"}
+  ],
+  steps:[
+    "Soften chopped onion and pepper in the oil in a wide pan, 6 min. Add garlic, turmeric and paprika for 1 min.",
+    "Stir in the rice to coat, then the tomato and stock. Simmer without stirring, lid on, 18 min.",
+    "Scatter the peas and the thawed prawns on top. Lid back on, 4 min, until the prawns are pink and hot.",
+    "Rest 5 min off the heat. Squeeze lemon over and bring the pan to the table."
+  ],
+  tip:"Turmeric stands in for saffron at a hundredth of the price. Thaw the prawns in cold water for ten minutes and drain them well.",
+  why:"Prawns are nearly pure protein, and the whole dinner is one pan to wash."
+},
+{
+  id:"th1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"asia", name:"Thai basil chicken",
+  short:"Pad krapow: chicken mince, garlic, chilli and a whole pot of basil over rice.",
+  time:20, kcal:510, protein:44, fibre:5,
+  ingredients:[
+    {t:"Kanan jauheliha", n:400, u:"g", s:1},
+    {t:"Valkosipuli", n:4, u:"kynttä"},
+    {t:"Chili", n:2, u:"kpl"},
+    {t:"Vihreät pavut, pakaste", n:200, u:"g", s:1},
+    {t:"Soijakastike", n:2, u:"rkl"},
+    {t:"Kalakastike", n:1, u:"rkl"},
+    {t:"Hunaja", n:1, u:"tl"},
+    {t:"Basilika", n:1, u:"ruukku"},
+    {t:"Täysjyväriisi", n:1, u:"dl"},
+    {t:"Oliiviöljy", n:1, u:"tl"}
+  ],
+  steps:[
+    "Rice on: 1 dl with 2 dl water, lid on, 12 min, then rest 10 min.",
+    "Fry the mince in the oil over high heat, breaking it up, until the water is gone and it starts to brown, 6–8 min.",
+    "Add chopped garlic and chilli for 1 min, then the green beans straight from the freezer. 3 min.",
+    "Stir in soy, fish sauce and honey and let it bubble 1 min.",
+    "Off the heat, fold in all the basil leaves until they wilt. Serve over the rice."
+  ],
+  tip:"Thai holy basil is rare here; ordinary basil is the standard substitute. Fish sauce is in the ethnic aisle and keeps for years.",
+  why:"Twenty minutes, 44 g protein, and it is as good cold from a box tomorrow."
+},
+{
+  id:"cn1", meal:"dinner", main:"beef", keeps:1, serves:2, cuisine:"asia", name:"Beef and broccoli",
+  short:"The takeaway classic: seared beef, crisp broccoli, ginger-soy sauce.",
+  time:25, kcal:530, protein:43, fibre:7,
+  ingredients:[
+    {t:"Naudan paistisuikale", n:300, u:"g", s:1},
+    {t:"Parsakaali", n:400, u:"g", s:1},
+    {t:"Valkosipuli", n:3, u:"kynttä"},
+    {t:"Inkivääri, raastettu", n:1, u:"rkl"},
+    {t:"Soijakastike", n:2, u:"rkl"},
+    {t:"Hunaja", n:1, u:"tl"},
+    {t:"Täysjyväriisi", n:1.5, u:"dl"},
+    {t:"Seesamiöljy", n:1, u:"tl"},
+    {t:"Oliiviöljy", n:1, u:"tl"},
+    {t:"Kevätsipuli", n:2, u:"kpl"}
+  ],
+  steps:[
+    "Rice on: 1.5 dl with 3 dl water, lid on, 12 min, then rest 10 min.",
+    "Cut the broccoli into small florets. Steam or boil 2 min, then drain. It finishes in the pan.",
+    "Get a wide pan very hot with the olive oil. Sear the beef in one layer 1–2 min, then move it to a plate.",
+    "Same pan: garlic and ginger 30 s, broccoli 2 min, then soy, honey and 3 rkl water. Let it bubble.",
+    "Return the beef, toss 30 s, finish with sesame oil and spring onion. Serve over rice."
+  ],
+  tip:"Pat the beef dry and do not crowd the pan, or it stews instead of sears.",
+  why:"400 g of broccoli between two is most of the plate, so the rice portion can stay honest."
 },
 
 /* ============================ BREAKFASTS ============================ */
@@ -611,5 +1057,117 @@ const RECIPES = [
 {id:"sn6", meal:"snack", serves:1, cuisine:"europe", name:"Skyr with cinnamon", short:"Cold, thick, slightly dessert-like.", time:2, kcal:120, protein:18, fibre:0,
  ingredients:[{t:"Skyr", n:150, u:"g", s:1},{t:"Kaneli", n:"1", u:"tl"},{t:"Makeutusaine or ½ tl hunajaa", n:"", u:"halutessa"}],
  steps:["Stir cinnamon through the skyr."],
- tip:"Whip it with a fork for 30 s and it turns mousse-like.", why:"18 g protein for 120 kcal — the best ratio in the plan."}
+ tip:"Whip it with a fork for 30 s and it turns mousse-like.", why:"18 g protein for 120 kcal — the best ratio in the plan."},
+
+/* ---------------- more breakfasts, lunches and snacks ---------------- */
+{
+  id:"bf6", meal:"breakfast", serves:1, cuisine:"nordic", name:"Oat porridge with quark and berries",
+  short:"Kaurapuuro, with enough protein stirred in to last until lunch.",
+  time:6, kcal:390, protein:25, fibre:7,
+  ingredients:[
+    {t:"Kaurahiutale", n:50, u:"g", s:1},
+    {t:"Maito", n:2, u:"dl", s:1},
+    {t:"Maitorahka", n:100, u:"g", s:1},
+    {t:"Pakastemarjat", n:80, u:"g", s:1},
+    {t:"Hunaja", n:1, u:"tl"},
+    {t:"Kaneli", n:"", u:"ripaus"}
+  ],
+  steps:[
+    "Simmer the oats in the milk with a pinch of salt, stirring, 4 min.",
+    "Off the heat, stir in the quark. Top with the berries, honey and cinnamon."
+  ],
+  tip:"Stir the quark in after cooking. Boiled, it turns grainy.",
+  why:"A warm breakfast for dark mornings, with 25 g protein."
+},
+{
+  id:"bf7", meal:"breakfast", serves:1, cuisine:"europe", name:"Egg and avocado on rye",
+  short:"One slice, two eggs, half an avocado.",
+  time:8, kcal:370, protein:18, fibre:7,
+  ingredients:[
+    {t:"Ruisleipä", n:1, u:"viipale"},
+    {t:"Kananmuna", n:2, u:"kpl"},
+    {t:"Avokado", n:"½", u:"kpl"},
+    {t:"Tomaatti", n:1, u:"kpl"},
+    {t:"Sitruuna, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Boil the eggs 7 min, cool under the tap, peel.",
+    "Mash the avocado onto the toasted rye with lemon, salt and pepper. Sliced egg and tomato on top."
+  ],
+  tip:"The other half of the avocado keeps a day in the fridge with the stone left in and lemon on the cut side.",
+  why:"Good fats and fibre; it holds for hours."
+},
+{
+  id:"ln7", meal:"lunch", serves:1, cuisine:"europe", name:"Chickpea and tuna salad",
+  short:"Two tins, a few vegetables, no cooking.",
+  time:8, kcal:380, protein:36, fibre:9,
+  ingredients:[
+    {t:"Kikherneet, säilyke", n:"½", u:"tlk"},
+    {t:"Tonnikala vedessä", n:1, u:"tlk (150 g)"},
+    {t:"Kirsikkatomaatti", n:150, u:"g", s:1},
+    {t:"Kurkku", n:"½", u:"kpl"},
+    {t:"Punasipuli", n:"¼", u:"kpl"},
+    {t:"Salaattilehdet", n:"", u:"kourallinen"},
+    {t:"Sitruuna", n:"½", u:"kpl"},
+    {t:"Oliiviöljy", n:1, u:"tl"}
+  ],
+  steps:[
+    "Drain and rinse the chickpeas. Drain the tuna.",
+    "Halve the tomatoes, dice the cucumber, slice the onion thin.",
+    "Toss everything with lemon, oil, salt and pepper."
+  ],
+  tip:"The other half-tin of chickpeas is the other person's lunch.",
+  why:"36 g protein from the cupboard in eight minutes."
+},
+{
+  id:"ln8", meal:"lunch", serves:1, cuisine:"asia", name:"Miso noodle soup with egg",
+  short:"A ten-minute bowl: rice noodles, miso broth, greens, a soft egg.",
+  time:12, kcal:430, protein:25, fibre:5,
+  ingredients:[
+    {t:"Riisinuudeli", n:50, u:"g", s:1},
+    {t:"Miso (or 1 rkl soijaa + 1 tl hunajaa)", n:1, u:"rkl"},
+    {t:"Kananmuna", n:2, u:"kpl"},
+    {t:"Pinaatti", n:60, u:"g", s:1},
+    {t:"Edamame, pakaste", n:60, u:"g", s:1},
+    {t:"Kevätsipuli", n:1, u:"kpl"},
+    {t:"Soijakastike", n:1, u:"tl"}
+  ],
+  steps:[
+    "Boil the eggs 7 min, cool, peel and halve.",
+    "Bring 4 dl water to a simmer. Add noodles and edamame, 4 min.",
+    "Off the heat, stir the miso in through a spoonful of the hot water, add soy and spinach.",
+    "Pour into a bowl, eggs on top, spring onion."
+  ],
+  tip:"Never boil miso: it goes flat. Stir it in at the end.",
+  why:"A hot lunch on a cold day for the effort of a sandwich."
+},
+{
+  id:"sn7", meal:"snack", serves:1, cuisine:"europe", name:"Cottage cheese and tomato",
+  short:"150 g raejuusto, one tomato, black pepper.",
+  time:2, kcal:160, protein:19, fibre:1,
+  ingredients:[
+    {t:"Raejuusto", n:150, u:"g", s:1},
+    {t:"Tomaatti", n:1, u:"kpl"},
+    {t:"Suola, mustapippuri", n:"", u:"maun mukaan"}
+  ],
+  steps:[
+    "Chop the tomato over the cottage cheese. Pepper."
+  ],
+  tip:"Add chopped chives or dill if there is some in the fridge.",
+  why:"19 g protein for 160 kcal, and savoury for a change."
+},
+{
+  id:"sn8", meal:"snack", serves:1, cuisine:"europe", name:"Banana and walnuts",
+  short:"One banana, a small handful of walnuts.",
+  time:1, kcal:190, protein:4, fibre:3,
+  ingredients:[
+    {t:"Banaani", n:1, u:"kpl"},
+    {t:"Saksanpähkinä", n:15, u:"g", s:1}
+  ],
+  steps:[
+    "Peel. Eat."
+  ],
+  tip:"Weigh the walnuts once: 15 g is about six halves.",
+  why:"The portable one, for days out of the house."
+}
 ];

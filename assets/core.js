@@ -5,7 +5,6 @@ var MESA = (function () {
 
   var RID = {};
   RECIPES.forEach(function (r) { RID[r.id] = r; });
-  var WEEKS = Object.keys(PLAN);
   var PANTRY_BY = {};
   PANTRY.forEach(function (p) { PANTRY_BY[p.n] = p; });
 
@@ -26,16 +25,153 @@ var MESA = (function () {
   function monday(d) { return addDays(d, -weekdayIndex(d)); }
   function daysBetween(a, b) { return Math.round((atNoon(b) - atNoon(a)) / 86400000); }
 
-  /* which rotation week a date falls in */
+  /* ISO week number: the label people use for a week in Finland */
   function weekOf(d) {
-    var n = WEEKS.length;
-    var w = Math.floor(daysBetween(parseISO(ROTATION_START), monday(d)) / 7);
-    return WEEKS[((w % n) + n) % n];
+    var t = atNoon(d);
+    t = addDays(t, 3 - weekdayIndex(t));                     /* Thursday of this week */
+    return 1 + Math.round(daysBetween(day(t.getFullYear(), 0, 4), t) / 7 - 0.01 + ((weekdayIndex(day(t.getFullYear(), 0, 4)) - 3) / 7));
+  }
+
+  /* ---------- dealing a week ----------
+     Everything here depends only on the date, so two phones always deal the same week. */
+  function rng(seed) {                                       /* mulberry32 */
+    var a = seed >>> 0;
+    return function () {
+      a = (a + 0x6D2B79F5) >>> 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+  function shuffled(list, rand) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(rand() * (i + 1)), x = a[i]; a[i] = a[j]; a[j] = x;
+    }
+    return a;
+  }
+  function ofMeal(meal) { return RECIPES.filter(function (r) { return r.meal === meal; }); }
+  var DINNERS = ofMeal("dinner");
+  var CYCLE = Math.floor(DINNERS.length / 7);                /* weeks before a dinner can repeat */
+  function weekIndex(mon) { return Math.floor(daysBetween(parseISO(ROTATION_START), monday(mon)) / 7); }
+
+  /* One cycle: every dinner dealt into CYCLE weeks of seven. Dinners are dealt by kind
+     (fish, chicken, beef, meatless…) so each week gets its share of each. */
+  var cycles = {};
+  function cycleWeeks(c) {
+    if (cycles[c]) return cycles[c];
+    var rand = rng(7919 * (c + 1000)), groups = {}, order = [];
+    DINNERS.forEach(function (r) {
+      var k = r.main || "other";
+      if (!groups[k]) { groups[k] = []; order.push(k); }
+      groups[k].push(r);
+    });
+    order.sort(function (x, y) { return groups[y].length - groups[x].length || (x < y ? -1 : 1); });
+    var weeks = [], n = 0, i;
+    for (i = 0; i < CYCLE; i++) weeks.push([]);
+    order.forEach(function (k) {
+      shuffled(groups[k], rand).forEach(function (r) { weeks[n++ % CYCLE].push(r); });
+    });
+    /* more dinners than seven a week can hold: leave one out, from whatever kind that week
+       has most of, so it is never the same dish that sits a cycle out */
+    weeks.forEach(function (w) {
+      while (w.length > 7) {
+        var count = {}, top = null;
+        w.forEach(function (r) { count[r.main] = (count[r.main] || 0) + 1; if (!top || count[r.main] > count[top]) top = r.main; });
+        var of = w.filter(function (r) { return r.main === top; });
+        w.splice(w.indexOf(of[Math.floor(rand() * of.length)]), 1);
+      }
+    });
+    /* Where one cycle meets the next, a dinner eaten in the last weeks could be dealt
+       straight back. Swap those further down the new cycle, so nothing returns within
+       three weeks. */
+    if (c > 0 && CYCLE > 2) {
+      var prev = cycleWeeks(c - 1);
+      /* what was eaten less than three weeks before week w of this cycle */
+      var recentFor = function (w) {
+        var out = [];
+        for (var b = CYCLE + w - 2; b < CYCLE; b++) if (b >= 0) out = out.concat(prev[b]);
+        return out;
+      };
+      for (var w = 0; w < 2; w++) {
+        var recent = recentFor(w);
+        weeks[w].forEach(function (r, at) {
+          if (recent.indexOf(r) < 0) return;
+          /* first try to swap like for like (fish for fish), then anything */
+          for (var pass = 0; pass < 2; pass++) {
+            for (var later = CYCLE - 1; later > w; later--) {
+              if (recentFor(later).indexOf(r) > -1) continue;
+              var cand = weeks[later];
+              for (var j = 0; j < cand.length; j++) {
+                if (recent.indexOf(cand[j]) > -1 || (pass === 0 && cand[j].main !== r.main)) continue;
+                weeks[w][at] = cand[j]; cand[j] = r;
+                return;
+              }
+            }
+          }
+        });
+      }
+    }
+    return (cycles[c] = weeks);
+  }
+
+  var plans = {};
+  function weekPlan(mon) {
+    mon = monday(mon);
+    var key = iso(mon);
+    if (plans[key]) return plans[key];
+    var wi = weekIndex(mon), c = Math.floor(wi / CYCLE);
+    var dinners = cycleWeeks(c)[wi - c * CYCLE];
+    var rand = rng(104729 * (wi + 5000));
+    var byTime = function (x, y) { return y.time - x.time; };
+
+    /* Dishes that keep go on the cook-double days, the longest of them on Saturday.
+       The rest take what is left, the longest on Sunday. */
+    var slots = [], keepers = dinners.filter(function (r) { return r.keeps; }).sort(byTime);
+    var others = dinners.filter(function (r) { return !r.keeps; }).sort(byTime);
+    COOK_DOUBLE.slice().sort(function (x, y) { return y - x; }).forEach(function (d) { if (keepers.length) slots[d] = keepers.shift(); });
+    others = others.concat(keepers);
+    [6, 4, 2, 5, 3, 1, 0].forEach(function (d) { if (!slots[d] && others.length) slots[d] = others.shift(); });
+
+    /* four breakfasts and four snacks a week, repeated, so the shop stays short */
+    var bfs = shuffled(ofMeal("breakfast"), rand).slice(0, 4), sns = shuffled(ofMeal("snack"), rand).slice(0, 4);
+    var lunches = shuffled(ofMeal("lunch").filter(function (r) { return !r.from; }), rand), li = 0;
+    var BF = [0, 1, 2, 0, 3, 1, 2], SN = [0, 1, 2, 3, 0, 1, 2];
+
+    var days = [];
+    for (var i = 0; i < 7; i++) {
+      var prev = i > 0 && COOK_DOUBLE.indexOf(i - 1) > -1 && slots[i - 1].keeps ? slots[i - 1] : null, lunch;
+      if (prev) {
+        var built = ofMeal("lunch").filter(function (r) { return r.from === prev.id; })[0];
+        lunch = built ? { id: built.id } : { leftover: prev.id };
+      } else {
+        lunch = { id: lunches[li++ % lunches.length].id };
+      }
+      var pd = { bf: bfs[BF[i] % bfs.length].id, lunch: lunch, dinner: slots[i].id, snack: sns[SN[i] % sns.length].id };
+      /* a light day gets the top-up that best fills the gap */
+      var gap = DAY_KCAL - dayTotals(pd).kcal;
+      if (gap > 150) {
+        var start = (wi * 7 + i) % TOPUPS.length, pick = null;
+        for (var t = 0; t < TOPUPS.length; t++) {
+          var x = TOPUPS[(start + t + TOPUPS.length * 1000) % TOPUPS.length];
+          if (!pick || Math.abs(x.kcal - gap) < Math.abs(pick.kcal - gap)) pick = x;
+        }
+        pd.extra = pick;
+      }
+      days.push(pd);
+    }
+    return (plans[key] = days);
   }
   function dayAt(d) {
     d = atNoon(d);
-    var week = weekOf(d), index = weekdayIndex(d);
-    return { date: d, iso: iso(d), week: week, index: index, plan: PLAN[week][index] };
+    var index = weekdayIndex(d);
+    return { date: d, iso: iso(d), week: weekOf(d), index: index, plan: weekPlan(d)[index] };
+  }
+  /* the cuisines a week visits, in the order they are cooked */
+  function weekCuisines(mon) {
+    var out = [];
+    weekPlan(mon).forEach(function (pd) { var c = RID[pd.dinner].cuisine; if (out.indexOf(c) < 0) out.push(c); });
+    return out;
   }
 
   /* ---------- a day's meals ---------- */
@@ -53,12 +189,13 @@ var MESA = (function () {
     if (pd.extra) { t.kcal += pd.extra.kcal; t.protein += pd.extra.protein; }
     return t;
   }
-  /* the plan's average day, for one standard portion of everything */
+  /* The average day, for one standard portion of everything: two full cycles of weeks from
+     the start of the rotation. Targets are scaled against this. */
   var AVG = (function () {
-    var k = 0, p = 0, n = 0;
-    WEEKS.forEach(function (w) {
-      PLAN[w].forEach(function (pd) { var t = dayTotals(pd); k += t.kcal; p += t.protein; n += 1; });
-    });
+    var k = 0, p = 0, n = 0, start = parseISO(ROTATION_START);
+    for (var w = 0; w < CYCLE * 2; w++) {
+      weekPlan(addDays(start, w * 7)).forEach(function (pd) { var t = dayTotals(pd); k += t.kcal; p += t.protein; n += 1; });
+    }
     return { kcal: k / n, protein: p / n };
   })();
 
@@ -292,7 +429,7 @@ var MESA = (function () {
   }
 
   return {
-    RID: RID, WEEKS: WEEKS, AVG: AVG,
+    RID: RID, AVG: AVG, CYCLE: CYCLE, weekPlan: weekPlan, weekIndex: weekIndex, weekCuisines: weekCuisines,
     atNoon: atNoon, addDays: addDays, iso: iso, parseISO: parseISO, monday: monday,
     daysBetween: daysBetween, weekOf: weekOf, dayAt: dayAt,
     meals: meals, dayTotals: dayTotals, mult: mult, shares: shares, size: size,

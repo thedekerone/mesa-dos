@@ -59,6 +59,9 @@ const PRODUCTS = {
   "Chili":               { a:0, u:"kpl", p:0.50 },
   "Avokado":             { a:0, u:"kpl", p:1.49 },
   "Selleri":             { a:0, u:"varsi", p:0.99 },
+  "Punakaali":           { a:0, u:"g", pack:500, p:0.99, loose:1 },
+  "Purjo":               { a:0, u:"kpl", p:1.49 },
+  "Tilli":               { a:0, u:"ruukku", p:1.79, per:{ "ruukku":0.5 } },
   "Omena":               { a:0, u:"kpl", p:0.40 },
   "Banaani":             { a:0, u:"kpl", p:0.30 },
 
@@ -68,6 +71,7 @@ const PRODUCTS = {
   "Kanan jauheliha":          { a:1, u:"g", pack:400, p:5.49 },
   "Sian jauheliha 10%":       { a:1, u:"g", pack:400, p:4.29 },
   "Naudan paistisuikale":     { a:1, u:"g", pack:300, p:6.99 },
+  "Naudan jauheliha 10%":     { a:1, u:"g", pack:400, p:4.99 },
   "Kirjolohi filee":          { a:1, u:"g", pack:300, p:6.49 },
   "Kalkkunaleike":            { a:1, u:"g", pack:200, p:2.49 },
 
@@ -81,6 +85,7 @@ const PRODUCTS = {
   "Maito, kevyt":          { a:2, u:"ml", pack:1000, p:1.19, per:{ dl:100 } },
   "Kananmuna":             { a:2, u:"kpl", pack:10, p:3.19 },
   "Hummus":                { a:2, u:"g", pack:200, p:2.29, per:{ rkl:20 } },
+  "Tofu":                  { a:2, u:"g", pack:270, p:2.49 },
 
   /* ---- bread and grains ---- */
   "Ruisleipä":          { a:3, u:"viipale", pack:12, p:2.49, sold:"pussi" },
@@ -90,6 +95,7 @@ const PRODUCTS = {
   "Tomaattimurska":           { a:4, u:"g", pack:400, p:1.29, sold:"tlk" },
   "Kikherneet, säilyke":      { a:4, u:"tlk", p:0.99 },
   "Valkoiset pavut, säilyke": { a:4, u:"tlk", p:1.19 },
+  "Kidneypavut, säilyke":     { a:4, u:"tlk", p:0.99 },
   "Kookosmaito, kevyt":       { a:4, u:"ml", pack:400, p:1.99, sold:"tlk" },
   "Tonnikala vedessä":        { a:4, u:"tlk", p:1.29, per:{ "tlk (150 g)":1 } },
 
@@ -97,7 +103,10 @@ const PRODUCTS = {
   "Seiti / pangasius, pakaste": { a:5, u:"g", pack:400, p:4.49 },
   "Pakastemarjat":              { a:5, u:"g", pack:500, p:2.99 },
   "Pakastemaissi":              { a:5, u:"g", pack:450, p:1.49, sold:"pussi" },
-  "Edamame":                    { a:5, u:"g", pack:400, p:2.99 }
+  "Edamame":                    { a:5, u:"g", pack:400, p:2.99 },
+  "Katkaravut, pakaste":        { a:5, u:"g", pack:300, p:5.99 },
+  "Pakasteherneet":             { a:5, u:"g", pack:500, p:1.49, sold:"pussi" },
+  "Vihreät pavut, pakaste":     { a:5, u:"g", pack:450, p:1.69, sold:"pussi" }
 };
 
 /* PANTRY — bought once, lasts weeks. Not on the weekly list; the shopping page shows which
@@ -111,7 +120,7 @@ const PANTRY = [
   { n:"Aji amarillo paste", q:"220 g", p:6.90, note:"ethnic aisle; sub: turmeric + chilli" },
   { n:"Miso", q:"300 g", p:4.49 },
   { n:"Green curry paste", q:"100 g", p:3.49 },
-  { n:"Liemi: kana + kasvis", q:"fondi / kuutiot", p:3.50, note:"pho and minestrone" },
+  { n:"Liemi: kana, kasvis, kala", q:"fondi / kuutiot", p:3.50, note:"soups, pho, paella" },
   { n:"Hunaja", q:"400 g", p:3.49 },
   { n:"Maapähkinävoi, sokeriton", q:"350 g", p:3.29 },
   { n:"Kaurahiutale", q:"1 kg", p:1.99 },
@@ -121,12 +130,16 @@ const PANTRY = [
   { n:"Täysjyväpasta", q:"500 g", p:1.69 },
   { n:"Riisinuudeli", q:"250 g", p:1.99 },
   { n:"Linssit, kuivat", q:"500 g", p:2.29 },
+  { n:"Punaiset linssit", q:"500 g", p:2.29, note:"dal" },
+  { n:"Garam masala", q:"1 purkki", p:2.49, note:"tikka masala, dal" },
+  { n:"Kalakastike", q:"200 ml", p:2.99, note:"Thai basil chicken — keeps for years" },
+  { n:"Puolukka, pakaste", q:"500 g", p:3.49, note:"freezer; for the meatballs" },
   { n:"Chia", q:"200 g", p:3.99 },
   { n:"Seesaminsiemenet", q:"100 g", p:3.49 },
   { n:"Saksanpähkinä", q:"200 g", p:4.49 },
   { n:"Oliivit", q:"1 tlk", p:1.99, note:"ají de gallina" },
   { n:"Parmesan / Grana Padano", q:"150 g", p:3.99, note:"a wedge keeps a month" },
-  { n:"Mausteet: jeera, paprikajauhe, oregano, kaneli, chilihiutaleet", q:"—", p:7.50, note:"if starting from zero", mix:1 },
+  { n:"Mausteet: jeera, paprikajauhe, kurkuma, oregano, kaneli, chilihiutaleet", q:"—", p:7.50, note:"if starting from zero", mix:1 },
   { n:"Tähtianis + kanelitanko", q:"—", p:4.00, note:"pho", mix:1 }
 ];
 
@@ -135,7 +148,7 @@ const PANTRY = [
      [["Name", amount], …]   a fixed amount of each, in the product's own unit, for the
                              recipe as written ("salad to serve" has to become something)
      null                    nothing to buy: salt, pepper, last night's soup */
-const SPICES = "Mausteet: jeera, paprikajauhe, oregano, kaneli, chilihiutaleet";
+const SPICES = "Mausteet: jeera, paprikajauhe, kurkuma, oregano, kaneli, chilihiutaleet";
 const BUY = {
   "Aji amarillo paste (or 1 tl chili + kurkuma)": "Aji amarillo paste",
   "Aji amarillo paste (or 1 tl kurkuma + 1 tl chili)": "Aji amarillo paste",
@@ -148,8 +161,14 @@ const BUY = {
   "Jeera jauhettuna": SPICES,
   "Jeera, suola, mustapippuri": SPICES,
   "Juusto (kevyt, esim. Oltermanni)": "Juusto, kevyt",
-  "Kanalientä (fondi)": "Liemi: kana + kasvis",
-  "Kasvisliemi": "Liemi: kana + kasvis",
+  "Kanalientä (fondi)": "Liemi: kana, kasvis, kala",
+  "Kasvisliemi": "Liemi: kana, kasvis, kala",
+  "Kanaliemi": "Liemi: kana, kasvis, kala",
+  "Kalaliemi": "Liemi: kana, kasvis, kala",
+  "Kurkuma": SPICES,
+  "Tofu, maustamaton": "Tofu",
+  "Katkaravut, pakaste (kuoritut)": "Katkaravut, pakaste",
+  "Puolukka (pakaste or hillo)": "Puolukka, pakaste",
   "Kanan filee (or leftover roast chicken)": "Kanan filee",
   "Kanan filee or reisikoipi": "Kanan filee",
   "Kanan reisikoipi, luuton ja nahaton": "Kanan reisikoipi, luuton",

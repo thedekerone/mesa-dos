@@ -171,6 +171,8 @@ html[lang="fi"] .line-slot{flex-basis:5.6rem}
 .wday-what small{display:block;margin-top:3px;font-size:.8rem;color:var(--ink-2);line-height:1.35}
 .wday-meta{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.8rem;color:var(--ink-2);white-space:nowrap}
 .wday-meta em{font-style:normal;font-weight:700;color:var(--ink);background:var(--aji);padding:1px 7px;border-radius:3px}
+.pager{display:flex;justify-content:space-between;margin-top:18px;font-size:.92rem}
+.pager a{color:var(--morado);font-weight:600;padding:6px 0}
 .fridge{display:none}
 
 /* ---------- shopping ---------- */

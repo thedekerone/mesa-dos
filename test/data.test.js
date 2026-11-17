@@ -3,7 +3,7 @@
    Run this after touching recipes.js, plan.js, household.js, shopping.js or i18n.js. */
 const { load, reporter } = require('./load');
 const D = load();
-const { RECIPES, PLAN, WEEK_NOTE, ROTATION_START, PEOPLE, AISLE_ORDER, PRODUCTS, PANTRY, BUY, UNITS, SLOTS, MESA } = D;
+const { RECIPES, ROTATION_START, DAY_KCAL, COOK_DOUBLE, TOPUPS, PEOPLE, AISLE_ORDER, PRODUCTS, PANTRY, BUY, UNITS, SLOTS, MESA } = D;
 const { check, done } = reporter();
 
 /* ---- recipes ---- */
@@ -11,7 +11,8 @@ const RID = {}, dupes = [];
 RECIPES.forEach(r => { if (RID[r.id]) dupes.push(r.id); RID[r.id] = r; });
 check('recipe ids are unique', dupes.length === 0, dupes.join(', '));
 
-const MEALS = ['dinner', 'breakfast', 'lunch', 'snack'], CUISINES = ['peru', 'asia', 'europe'];
+const MEALS = ['dinner', 'breakfast', 'lunch', 'snack'];
+const CUISINES = ['peru', 'mexico', 'asia', 'india', 'mideast', 'europe', 'nordic'];   /* the ones app.js can name */
 const badShape = RECIPES.filter(r =>
   !MEALS.includes(r.meal) || !CUISINES.includes(r.cuisine) || !r.name || !r.short ||
   ![r.time, r.kcal, r.protein].every(n => typeof n === 'number' && n > 0) ||
@@ -31,29 +32,23 @@ check('only numeric bulk units follow the plate size', badScale.length === 0, ba
 const badFrom = RECIPES.filter(r => r.from && (!RID[r.from] || RID[r.from].meal !== 'dinner')).map(r => r.id);
 check('a lunch built on a dinner names a real dinner', badFrom.length === 0, badFrom.join(', '));
 
-/* ---- plan ---- */
-const WEEKS = Object.keys(PLAN);
-const broken = [], badLeftover = [], badExtra = [], used = new Set();
-WEEKS.forEach(w => PLAN[w].forEach((d, n) => {
-  [d.bf, d.lunch.id || d.lunch.leftover, d.dinner, d.snack].forEach(id => {
-    if (!RID[id]) broken.push(w + ' ' + d.day + ': ' + id); else used.add(id);
-  });
-  /* the lunch must come from the night before; Monday has no night before on this list */
-  const src = d.lunch.leftover || (RID[d.lunch.id] && RID[d.lunch.id].from);
-  if (src && (n === 0 || PLAN[w][n - 1].dinner !== src)) badLeftover.push(w + ' ' + d.day);
-  if (d.extra && !(d.extra.text && d.extra.kcal > 0 && d.extra.protein >= 0 && Array.isArray(d.extra.items) && d.extra.items.length)) {
-    badExtra.push(w + ' ' + d.day);
-  }
-}));
-check('every week has seven days', WEEKS.every(w => PLAN[w].length === 7));
-check('every plan entry points at a recipe', broken.length === 0, broken.join('; '));
-check('leftover lunches are the previous dinner', badLeftover.length === 0, badLeftover.join('; '));
-check('top-ups have text, numbers and ingredients', badExtra.length === 0, badExtra.join('; '));
-const unused = RECIPES.filter(r => !used.has(r.id)).map(r => r.id);
-check('every recipe is on the plan', unused.length === 0, unused.join(', '));
-check('every week has a note', WEEKS.every(w => WEEK_NOTE[w]));
+const dinners = RECIPES.filter(r => r.meal === 'dinner');
+const KINDS = ['chicken', 'fish', 'beef', 'pork', 'veg'];
+check('every dinner says what kind it is', dinners.every(r => KINDS.includes(r.main)), dinners.filter(r => !KINDS.includes(r.main)).map(r => r.id).join(', '));
+check('there are enough dinners for three different weeks', dinners.length >= 21, String(dinners.length));
+check('enough dinners keep for lunch to fill the cook-double days', dinners.filter(r => r.keeps).length >= dinners.length / 2);
+check('there are at least four breakfasts, four snacks and three lunches to deal from',
+  RECIPES.filter(r => r.meal === 'breakfast').length >= 4 && RECIPES.filter(r => r.meal === 'snack').length >= 4 &&
+  RECIPES.filter(r => r.meal === 'lunch' && !r.from).length >= 3);
+
+/* ---- the rules a week is dealt by ---- */
 const start = MESA.parseISO(ROTATION_START);
 check('ROTATION_START is a Monday', !!start && start.getDay() === 1, ROTATION_START);
+check('DAY_KCAL is a plausible day', DAY_KCAL >= 1200 && DAY_KCAL <= 2500);
+check('cook-double days are weekdays, and never Sunday (the week\'s list would not cover Monday)',
+  COOK_DOUBLE.length > 0 && COOK_DOUBLE.every(d => Number.isInteger(d) && d >= 0 && d <= 5));
+check('top-ups have text, numbers and ingredients',
+  TOPUPS.length > 0 && TOPUPS.every(x => x.text && x.kcal > 0 && x.protein >= 0 && Array.isArray(x.items) && x.items.length));
 
 /* ---- the two people ---- */
 check('there are two people with sane targets',
@@ -82,7 +77,7 @@ const badBuy = Object.keys(BUY).filter(t => {
 check('every BUY entry points at a product or pantry item', badBuy.length === 0, badBuy.join('; '));
 const ingredientNames = new Set();
 RECIPES.forEach(r => r.ingredients.forEach(i => ingredientNames.add(i.t)));
-WEEKS.forEach(w => PLAN[w].forEach(d => { if (d.extra) d.extra.items.forEach(i => ingredientNames.add(i.t)); }));
+TOPUPS.forEach(x => x.items.forEach(i => ingredientNames.add(i.t)));
 const staleBuy = Object.keys(BUY).filter(t => !ingredientNames.has(t));
 check('BUY has no entries for ingredients that no longer exist', staleBuy.length === 0, staleBuy.join('; '));
 

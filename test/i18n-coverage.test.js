@@ -2,13 +2,13 @@
 /* Fails if a Finnish data string has no English translation.
    Strings that are legitimately identical in both languages are allowlisted. */
 const { load } = require('./load');
-const { I18N, UNITS, RECIPES, PLAN, PRODUCTS, PANTRY, AISLE_ORDER, MESA } = load();
+const { I18N, UNITS, RECIPES, TOPUPS, PRODUCTS, PANTRY, AISLE_ORDER, MESA } = load();
 
 /* words/terms that are the same in Finnish and English */
 const ALLOW = new Set([
   'Lime', 'Lime (aji verde)', 'Oregano', 'Parmesan (or Grana Padano)', 'Parmesan / Grana Padano',
   'Bulgur', 'Quinoa', 'Miso', 'Gochujang', 'Green curry paste', 'Aji amarillo paste',
-  'Edamame', 'Hummus', 'Skyr', 'Pak choi', 'Chia', 'Chili flakes', '—'
+  'Edamame', 'Hummus', 'Skyr', 'Pak choi', 'Chia', 'Chili flakes', 'Garam masala', '—'
 ]);
 
 const strings = new Map();
@@ -18,7 +18,7 @@ const ingredient = i => {
   if (i.u && !UNITS[i.u] && i.u !== 'viipaletta') strings.set(i.u, 'unit phrase');
 };
 RECIPES.forEach(r => r.ingredients.forEach(ingredient));
-Object.keys(PLAN).forEach(w => PLAN[w].forEach(d => { if (d.extra) d.extra.items.forEach(ingredient); }));
+TOPUPS.forEach(x => x.items.forEach(ingredient));
 AISLE_ORDER.forEach(a => strings.set(a, 'aisle'));
 Object.keys(PRODUCTS).forEach(n => strings.set(n, 'product'));
 PANTRY.forEach(p => { strings.set(p.n, 'pantry'); strings.set(p.q, 'pantry size'); });
