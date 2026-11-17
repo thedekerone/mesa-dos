@@ -1,0 +1,11 @@
+{
+  "name": "mesa-dos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Two-person meal planning site: Peruvian, Asian and European cooking for Finnish supermarkets.",
+  "scripts": {
+    "start": "python3 -m http.server 8100 --bind 127.0.0.1",
+    "test": "node test/render.test.js && node test/i18n-coverage.test.js"
+  },
+  "license": "UNLICENSED"
+}
