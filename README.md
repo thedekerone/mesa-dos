@@ -1,74 +1,123 @@
 # Mesa Dos
 
-A two-person meal-planning site for weight loss, built around Peruvian, Asian and European home cooking and Finnish supermarket ingredients.
+What the two of us are cooking today. A two-week rotation of Peruvian, Asian and European dinners, sized for two different plates, with a shopping list for Finnish supermarkets.
 
 **Live:** https://meals.white-snakes.com
 
-No framework, no build step, no dependencies, no external fonts or CDNs. Four data files plus one app file. If the files are on disk, the site is deployed.
+No framework, no build step, no dependencies, no external fonts or CDNs. Five data files, two script files, a small service worker. If the files are on disk, the site is deployed.
 
 ---
 
 ## What it does
 
-- **Two-week dinner rotation** (Week A / Week B), each day showing breakfast, lunch, dinner, snack and an optional *top-up* line for the lighter days.
-- **30 recipes**, two servings each: Peruvian (lomo saltado, pollo a la brasa, ceviche, ají de gallina, causa, cod with salsa criolla), Asian (miso salmon, Korean lettuce wraps, green curry, pho, pork meatballs), European (Greek traybake, minestrone, baked feta pasta), plus breakfasts, lunches and snacks.
-- **Plate scaler** — Lighter 0.8× / Standard 1.0× / Hearty 1.2× — scales ingredient quantities, kcal and protein everywhere, including open recipe modals. Cooking times are unaffected.
-- **Shopping lists** per week, grouped by Finnish store aisle, with indicative prices and a running total. Ticks persist in localStorage.
-- **EN / FI toggle** for ingredient and shopping names. When English is selected the Finnish product name is kept as grey secondary text, because you still have to find the thing in Prisma.
-- **Pantry list** — the buy-once items that make the weekly shop cheap.
+- **Today.** Opens on today's date: tonight's dinner, how long it takes, how to split the pan between the two plates, the rest of the day's meals, and what has to happen tonight for tomorrow (stir the overnight oats, move the fish to the fridge, box the lunch portions).
+- **Two plates.** Each person has a daily kcal target. Everything is scaled from those two numbers: a 1 700 / 1 350 pair means one plate gets 56 % of every pot and the other 44 %. Nobody cooks a separate meal.
+- **Cook once, eat twice.** Where tomorrow's lunch is tonight's dinner, the day says "cook double", the recipe opens at four portions and the shopping list buys for four.
+- **Recipe screen.** Amounts for both of you, for one of you, with or without tomorrow's lunch. Tick ingredients and steps as you go. A switch keeps the screen on.
+- **Week.** Seven dinners at a glance, this week or next. *Print for the fridge* gives one page.
+- **Shopping list.** Added up from the plan, not written by hand: every recipe on the week, doubled where it should be, rounded up to what the shop sells, grouped by aisle. Ticks stay on the phone. *Send the list* shares what is left as text, which is how the list gets from one phone to the other. Cupboard staples are listed separately with what the week uses; tick one that is running low and it joins the list.
+- **30 recipes** — 14 dinners, 5 breakfasts, 5 lunches, 6 snacks — searchable by name or ingredient, in either language.
+- **EN / FI** for labels, ingredients and the shopping list. The other language's name stays as grey secondary text, because you still have to find the thing in Prisma. Recipe steps and prose stay in English.
+- **Works offline** after the first visit and can be added to the home screen.
+
+## Changing things
+
+| To change | Edit |
+|---|---|
+| Names and daily targets | `assets/household.js` |
+| Which week is A | `ROTATION_START` in `assets/plan.js` (any Monday) |
+| What is cooked on which day | `PLAN` in `assets/plan.js` |
+| A recipe | `assets/recipes.js` |
+| A price, a pack size, an aisle | `PRODUCTS` in `assets/shopping.js` |
+
+Names and targets can also be changed on the **Us** page, but that is saved on that phone only. The file is what both phones share.
+
+`household.js` holds targets, not body measurements. The repository is public and the targets are all the site needs. The calculator on the Us page (Mifflin-St Jeor) keeps what is typed into it on the phone.
 
 ## Files
 
 | File | What it is |
 |---|---|
-| `index.html» | Page shell, section markup, hero copy, prose for the Basics tab |
-| `assets/styles.css» | Everything visual, including print styles |
-| `assets/recipes.js» | `RECIPES» array — 30 recipes, the whole content model |
-| `assets/plan.js» | `PLAN» (weeks A/B), `TARGET», `PLATE», `WEEK_NOTE» |
-| `assets/shopping.js» | `SHOP» (per-week baskets), `PANTRY», `STORES», `AISLE_ORDER» |
-| `assets/i18n.js» | `I18N» (Finnish → English), `I18N_WORDS», `SLOTS» (UI labels) |
-| `assets/app.js» | Rendering, routing, scaling, modal, shopping checkboxes, language switch |
-| `test/*.test.js» | Node-only tests, no dependencies |
+| `index.html` | Page shell, navigation, the "How this works" prose |
+| `assets/styles.css` | Everything visual, including print styles |
+| `assets/recipes.js` | `RECIPES` — the content |
+| `assets/plan.js` | `ROTATION_START`, `PLAN` (weeks A/B), `WEEK_NOTE` |
+| `assets/household.js` | `PEOPLE` — two names, two targets |
+| `assets/shopping.js` | `PRODUCTS` (what the shop sells), `PANTRY` (buy once), `BUY` (ingredient → product), `STORES`, `AISLE_ORDER` |
+| `assets/i18n.js` | `I18N` (Finnish → English names), `UNITS` (singular/plural in both languages), `SLOTS` (every interface string) |
+| `assets/core.js` | The arithmetic: dates, rotation, portions, plate shares, the shopping list. No DOM. |
+| `assets/app.js` | The page: routing, six screens, events, what is remembered on the phone |
+| `sw.js` | Service worker: network first, cache as the fallback. `CORE` lists what is stored on the first visit |
+| `manifest.json`, `assets/*.png` | Home-screen name, colours and icons |
+| `test/*.test.js` | Node-only tests, no dependencies |
 
 ### Data shapes
 
 ```js
-// recipe
-{ id:"a1", meal:"dinner"|"breakfast"|"lunch"|"snack", cuisine:"peru"|"asia"|"europe",
+// recipe — kcal / protein / fibre are per portion; the ingredient list makes `serves` portions
+{ id:"a1", meal:"dinner"|"breakfast"|"lunch"|"snack", serves:2, cuisine:"peru"|"asia"|"europe",
   name, short, time:35, kcal:520, protein:41, fibre:6,
   ingredients:[{ t:"Naudan paistisuikale", n:300, u:"g", s:1 }],
-  steps:["..."], tip:"...", why:"..." }
+  steps:["..."], tip:"...", why:"...",
+  ahead:"...",   // optional: has to happen the night before; shown on the previous day
+  from:"b5" }    // optional: a lunch built on that dinner, which then makes extra
 
-// plan day
+// plan day — the extra's items are for one person
 { day:"Monday", bf:"bf1", lunch:{id:"ln2"} | {leftover:"a1"}, dinner:"a1", snack:"sn1",
-  extra:{ text:"200 g skyr + 1 boiled egg", kcal:250, protein:25 } }
+  extra:{ text:"200 g skyr and a boiled egg", kcal:210, protein:29, items:[{ t:"Skyr", n:200, u:"g", s:1 }] } }
 
-// shopping item
-{ id:"A30", n:"Kanan filee", q:"800 g", p:8.49, note:"Greek tray + quinoa salad" }
+// product — amounts add up in `u`, one purchase holds `pack` of it and costs `p`
+"Valkosipuli": { a:0, u:"kpl", p:0.79, per:{ "kynttä":0.1 } }
 ```
 
-Ingredients: `n» is the number, `u» the unit, `s:1» marks it as scalable. Only bulk units (g / ml / dl / kpl) set `s»; anything without it is left alone at every plate size — deliberate for "1 tbsp" style seasonings. `n:""» with a unit alone means "to taste".
+Dinners are written for two (`serves:2`; the minestrone makes four). Breakfasts, snacks and most lunches are written for one, and the page doubles them.
+
+Ingredients: `n` is the number, `u` the unit, `s:1` marks a bulk amount that follows the plate size. Counts and spoons ("2 cloves", "1 tbsp") have no `s`: they follow the number of portions but not the plate size. `n:""` with a unit alone means "to taste".
+
+### How the numbers work
+
+1. The plan's **average day** — one standard portion of everything, both weeks — is worked out from the data (about 1 535 kcal).
+2. A person's **multiplier** is their target over that average. Their plate, at every meal, is the standard portion times the multiplier.
+3. A person's **share** of a pot is their target over the sum of both targets.
+4. A dinner is cooked for 2 portions, or 4 when the next day's lunch is the same pot. If the two multipliers average within 3.5 % of 1, the recipe is cooked as written and only the split differs; otherwise the bulk amounts are scaled.
+5. The **shopping list** runs every recipe on the week through steps 2–4, turns each ingredient line into a product via `BUY` and `per`, adds up, and rounds up to whole packs (a few grams over does not buy a second pack).
 
 ## Hard rules
 
 1. **No build step and no dependencies.** Plain script tags, no modules, no bundler. Served by a static file server.
-2. **No external requests.** No Google Fonts, no CDN, no analytics, no remote images. It must render on a bad connection and behind a pi-hole.
-3. **Mobile first.** Most reading happens on a phone inside Telegram's in-app browser. Check 390 px before 1280 px. Keep the print stylesheet working — it is how the shopping list gets used.
-4. **Honest numbers.** kcal and protein are estimates; never state a claim the data does not support. Tests recompute daily totals — if you change portions, update the copy in `index.html» and `TARGET» in `plan.js» to match the arithmetic.
-5. **Keep localStorage keys stable** (`mesa2.week», `mesa2.plate», `mesa2.lang», `mesa2.checks.A|B») so existing users keep their ticks.
-6. **Bilingual data.** Any new ingredient or shopping item needs an `I18N» entry. `node test/i18n-coverage.test.js» fails if you forget.
-7. **Prices are indicative** (K-Market/Prisma, Nov 2026). Keep them plausible for Finland; do not invent precision.
+2. **No external requests.** No Google Fonts, no CDN, no analytics, no remote images. It must render on a bad connection and behind a pi-hole. The display type is whatever condensed sans the device already has.
+3. **Mobile first.** Most reading happens on a phone, often inside Telegram's in-app browser. Check 390 px before 1280 px. Keep the print styles working: the fridge sheet and the shopping list each fit one page.
+4. **Honest numbers.** kcal and protein are estimates; never state a claim the data does not support. Nothing on the page is a hand-typed total: averages, shares and baskets are all computed. Basket totals are rounded to whole euros on purpose.
+5. **Both phones must agree.** Anything that decides what is cooked or bought lives in a data file. localStorage is only for ticks, the language, and per-phone overrides, and every key starts with `mesa2.`. All access goes through `store` in `app.js`, which survives browsers that block storage.
+6. **Bilingual data.** Any new ingredient, product or pantry item needs an `I18N` entry, and any new interface string needs both languages in `SLOTS`. The tests fail if you forget.
+7. **Every ingredient must be buyable.** A new ingredient line has to be a product name, a pantry name, or have a `BUY` entry (`null` for salt and pepper). `test/core.test.js` fails otherwise.
+8. **Prices are indicative** (K-Market/Prisma, Nov 2026). Keep them plausible for Finland; do not invent precision.
+
+### Adding a recipe
+
+1. Add it to `RECIPES` with `serves`.
+2. Put it on a day in `PLAN` (the tests insist every recipe is on the plan).
+3. Run `npm test`. It will name every ingredient that has no translation and every one that cannot be bought. Fix those in `i18n.js` and `shopping.js`.
 
 ## Run it locally
 
 ```bash
-cd meals
 python3 -m http.server 8100 --bind 127.0.0.1
 # open http://127.0.0.1:8100
-npm test     # or: node test/render.test.js && node test/i18n-coverage.test.js
+npm test     # five files in test/, about a second
 ```
 
-The render test runs `app.js» against a small DOM stub in both languages and asserts the page builds: 7 day cards, 30 recipe cards, translated quantities, Finnish secondary names, basket totals. It is the fast feedback loop — run it before and after touching rendering code.
+| Test | What it catches |
+|---|---|
+| `data.test.js` | Broken recipe ids, a leftover lunch that is not the previous dinner, a product without a price or a known unit, a `BUY` entry pointing nowhere, an interface string missing in Finnish. |
+| `core.test.js` | The arithmetic: which week a date falls in (across daylight saving), how many portions a dinner makes, plate shares, scaled amounts in both languages, the shopping list for both weeks, the target calculator. |
+| `render.test.js` | Runs `app.js` against a small DOM stub: every screen, every day of the rotation and every recipe, in both languages, plus a phone with storage blocked and one with junk in it. |
+| `offline.test.js` | A script, stylesheet or icon that `index.html` loads but `sw.js` does not store; anything loaded from another origin. |
+| `i18n-coverage.test.js` | A Finnish data string with no English translation. |
+
+To see a particular day without waiting for it, set `window.MESA_NOW = "2026-11-21"` before the scripts load, or open `#/day/2026-11-21`.
+
+The DOM stub has no real elements, so it cannot see events. Keyboard use, focus, printing and offline behaviour need a look in a browser.
 
 ## How it is deployed (do not break this)
 
@@ -80,20 +129,24 @@ launchd job com.openclaw.meals
 
 Edits are live on the next request. Nothing to build, restart or invalidate. Paths are relative, so it also runs from a subdirectory or GitHub Pages.
 
+The service worker does not change this. It asks the server first, every time, and revalidates rather than trusting the browser's HTTP cache; the stored copy is used only when the server cannot be reached, or has not answered within three seconds. There is no cache version to bump. Two things to know: a new asset file has to be added to `CORE` in `sw.js` (the offline test says so), and service workers need HTTPS or localhost — the tunnel provides that.
+
+Routes are in the hash (`#/`, `#/day/2026-11-18`, `#/week`, `#/shop`, `#/recipes`, `#/recipe/a1/4`, `#/us`), so any static server works and a recipe can be sent as a link.
+
 ## Backlog — where this could be better
 
 Roughly in order of value:
 
-1. **Two plate sizes at once.** The scale is global. The real household need is "one standard, one hearty", with a shopping list that adds both. Requires per-person multipliers in state, per-person kcal in day totals, and ingredient quantities shown as a range.
-2. **Generate baskets from the plan.** `SHOP» is curated by hand, so adding a recipe does not change the shopping list. Aggregating ingredients by aisle — merging units, rounding sensibly — would let the plan be edited without breaking the shop.
-3. **Week C and a vegetarian track.** `PLAN» supports more keys, but the UI assumes A/B in a few places (`#weekSeg», `WEEK_NOTE», `SHOP»).
-4. **A printable one-page fridge sheet** — the week at a glance, large type, no navigation. Print currently formats only the shopping list.
-5. **Accessibility pass.** The recipe modal does not trap focus, there is no aria-live on filter results, and the segments should be proper radio groups.
-6. **Full Finnish translation** of prose and method steps. Names are done; roughly 2,000 words of steps are not.
-7. **Photo support** — one image per recipe would change the feel, but it must stay local (no CDN) and small.
-8. **PWA/offline** — service worker + manifest, so it works in a supermarket basement with no signal.
-9. **Price freshness** — a per-item "checked on" date, or a small JSON the owner edits seasonally.
-10. **More Peruvian coverage** — tacu tacu, arroz con pollo, sopa criolla — and Finnish seasonality (rocket in summer, roots in winter).
+1. **Ticks do not travel between phones.** There is no server, so a shopping tick on one phone is unknown to the other. *Send the list* is the workaround. Anything better needs somewhere to keep shared state.
+2. **Swap or skip a dinner** from the phone. Today that means editing `plan.js`, because the plan has to be the same on both phones (see 1).
+3. **Amounts inside the steps are not scaled.** "1.5 dl rice with 3 dl water" stays as written when the pot is doubled; the page says to go by the ingredient list.
+4. **The cupboard is not tracked.** The list shows what a week takes out of each staple, not what is left.
+5. **Full Finnish translation** of prose and method steps. Names, labels and controls are done; roughly 2,000 words of steps are not. English blocks are marked `lang="en"`.
+6. **Photos** — one image per recipe would change the feel, but it must stay local (no CDN) and small.
+7. **Price freshness** — a per-item "checked on" date.
+8. **More Peruvian coverage** — tacu tacu, arroz con pollo, sopa criolla — and Finnish seasonality. A week C only needs a `PLAN.C` and a `WEEK_NOTE.C`; the rotation picks it up.
+9. **Timers** on steps that say "25–30 min".
+10. **Screen-reader check.** Built with labels, roles and focus handling and tested with a keyboard, not yet with VoiceOver or TalkBack.
 
 ## Tone
 

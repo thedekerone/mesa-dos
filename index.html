@@ -3,179 +3,106 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#faf6ee">
-<title>Mesa Dos · meal plan for two</title>
-<meta name="description" content="A two-person, weight-loss meal plan with Peruvian, Asian and European cooking and a shopping list built for Finnish supermarkets.">
+<meta name="theme-color" content="#f7f4f9">
+<meta name="robots" content="noindex">
+<title>Mesa Dos</title>
+<meta name="description" content="What we are cooking today: a two-week rotation of Peruvian, Asian and European dinners, sized for two different plates, with a shopping list for Finnish supermarkets.">
 <link rel="stylesheet" href="assets/styles.css">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c2452f'/%3E%3Ctext x='32' y='44' font-size='34' font-family='Georgia,serif' text-anchor='middle' fill='%23faf6ee'%3E2%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%232a1533'/%3E%3Ctext x='32' y='46' font-size='40' font-weight='700' font-family='Arial Narrow,Arial,sans-serif' text-anchor='middle' fill='%23f6b81a'%3E2%3C/text%3E%3C/svg%3E">
 </head>
 <body>
 <a class="skip" href="#main">Skip to content</a>
 
 <header class="top">
-  <div class="wrap top-inner">
-    <a class="brand" href="#plan">
-      <span class="brand-mark">2</span>
-      <span class="brand-text"><strong>Mesa Dos</strong><em>cocina de casa · for two</em></span>
+  <a class="brand" href="#/" aria-label="Mesa Dos, today">
+    <span class="brand-mark" aria-hidden="true">2</span>
+    <span class="brand-name">Mesa Dos</span>
+  </a>
+
+  <nav class="nav" aria-label="Sections">
+    <a href="#/" data-nav="today">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3.5"/></svg>
+      <span data-i18n="navToday">Today</span>
     </a>
-    <nav class="tabs" id="tabs" aria-label="Sections">
-      <button class="tab" data-tab="plan">Week</button>
-      <button class="tab" data-tab="recipes">Recipes</button>
-      <button class="tab" data-tab="shop">Shopping</button>
-      <button class="tab" data-tab="basics">Basics</button>
-    </nav>
-    <div class="langseg" id="langSeg" role="group" aria-label="Language for ingredients" title="Ingredient and shopping-list language">
-      <button data-lang="en">EN</button>
-      <button data-lang="fi">FI</button>
-    </div>
+    <a href="#/week" data-nav="week">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M9 3.5v4M15 3.5v4"/></svg>
+      <span data-i18n="navWeek">Week</span>
+    </a>
+    <a href="#/shop" data-nav="shop">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9h14l-1.4 9.5a1.5 1.5 0 0 1-1.5 1.3H7.9a1.5 1.5 0 0 1-1.5-1.3L5 9zM9 9l3-5 3 5"/></svg>
+      <span data-i18n="navShop">Shopping</span>
+    </a>
+    <a href="#/recipes" data-nav="recipes">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4.5h11a3 3 0 0 1 3 3v12H8a3 3 0 0 1-3-3v-12zM9 9h6M9 13h6"/></svg>
+      <span data-i18n="navRecipes">Recipes</span>
+    </a>
+    <a href="#/us" data-nav="us">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="12" r="5.5"/><circle cx="16" cy="12" r="4"/></svg>
+      <span data-i18n="navUs">Us</span>
+    </a>
+  </nav>
+
+  <div class="lang" id="langSeg" role="radiogroup" aria-label="Language" title="Language for labels, ingredients and the shopping list">
+    <button role="radio" aria-checked="true" data-lang="en" lang="en" aria-label="EN, English">EN</button>
+    <button role="radio" aria-checked="false" data-lang="fi" lang="fi" aria-label="FI, suomi">FI</button>
   </div>
 </header>
 
-<main id="main">
+<main id="main" tabindex="-1">
+  <section class="view" id="view-today"></section>
+  <section class="view" id="view-week" hidden></section>
+  <section class="view" id="view-shop" hidden></section>
+  <section class="view" id="view-recipes" hidden></section>
+  <section class="view" id="view-recipe" hidden></section>
 
-  <!-- ============ WEEK ============ -->
-  <section class="tab-panel" id="panel-plan">
-    <div class="wrap">
-      <div class="hero">
-        <div class="hero-copy">
-          <p class="eyebrow">Weight loss · two people · Finnish supermarkets</p>
-          <h1>Peruvian, Asian and European home cooking — <span class="accent">sized for losing weight</span>, not for starving.</h1>
-          <p class="lede">Fourteen dinners on a two-week rotation, protein-forward breakfasts, lunches that are mostly leftovers, and one shopping list per week that you can actually fill at S-market, K-Market or Lidl.</p>
-          <div class="hero-actions">
-            <button class="btn primary" data-goto="shop">This week's shopping list</button>
-            <button class="btn ghost" data-goto="recipes">Browse all 30 recipes</button>
-          </div>
-        </div>
-        <div class="hero-stats" id="heroStats"></div>
-      </div>
+  <section class="view" id="view-us" hidden>
+    <div id="usSettings"></div>
 
-      <div class="plan-bar">
-        <div class="seg" id="weekSeg" role="group" aria-label="Choose week">
-          <button data-week="A" class="on">Week A</button>
-          <button data-week="B">Week B</button>
-        </div>
-        <div class="seg small" id="plateSeg" role="group" aria-label="Plate size">
-          <button data-plate="light">Lighter</button>
-          <button data-plate="normal" class="on">Standard</button>
-          <button data-plate="hearty">Hearty</button>
-        </div>
-        <p class="hint" id="plateHint"></p>
-      </div>
+    <div class="prose" lang="en">
+      <h2>How this works</h2>
 
-      <div class="days" id="days"></div>
+      <h3>One pot, two plates</h3>
+      <p>We eat the same food. The recipes are written in standard portions, and each of us gets that scaled to a daily target, so one plate is bigger than the other. Nobody cooks a separate meal. The bar on every recipe shows how to split the pan.</p>
 
-      <div class="callout">
-        <h3>How the days are built</h3>
-        <p><strong>Breakfast ~380 kcal · lunch ~430 kcal · dinner ~480 kcal · snack ~160 kcal</strong> — about <strong>1 450–1 650</strong> kcal a day and 95–130 g protein, depending on the day. The lighter days carry a <em>top-up</em> line, so the week averages roughly <strong id="kcalTargetInline">1 550</strong> kcal a person. That is a 400–600 kcal daily deficit, or about 0.4–0.6 kg a week for most adults. Both of you eat the same dinner; only the plate size changes. Lunch is almost always last night's dinner, which is why the shopping list is short.</p>
-        <p class="muted">No calorie counting at the table: fill half the plate with vegetables, a quarter protein, a quarter starch. Weigh once a week, in the morning, same conditions.</p>
-      </div>
+      <h3>Cook once, eat twice</h3>
+      <p>Where tomorrow's lunch is tonight's dinner, the dinner is cooked double and the day says so. Box the lunch portions before sitting down, or they get eaten.</p>
+
+      <h3>The plate rule</h3>
+      <p>Half vegetables, a quarter protein, a quarter starch. Protein first, vegetables second, starch last. This one rule replaces most calorie counting at the table.</p>
+
+      <h3>Protein is the lever</h3>
+      <p>Aim for 25–35 g at every meal. In Finnish shops the cheap, boring workhorses are <strong>maitorahka</strong> (quark, about 11 g per 100 g), <strong>kanan filee</strong>, <strong>kirjolohi</strong>, <strong>pakasteseiti</strong>, <strong>kananmuna</strong>, <strong>raejuusto</strong> and <strong>tonnikala vedessä</strong>. They do more for hunger than any “light” product on the shelf.</p>
+
+      <h3>What we do not do</h3>
+      <ul>
+        <li>No detox, no meal-replacement shakes, no skipping dinner.</li>
+        <li>No deep frying. The oven does the work, and lomo saltado keeps its character with oven fries.</li>
+        <li>No ingredient that only exists online. If aji amarillo paste is a hassle, the substitution is in the recipe.</li>
+      </ul>
+
+      <h3>The week in one line</h3>
+      <p>Shop at the weekend, cook most evenings, eat last night's dinner for lunch. If a day goes sideways, repeat a dinner from earlier in the week. The plan is a rotation, not a contract.</p>
+
+      <h3>The scale</h3>
+      <p>Once a week, same morning, same conditions. Daily numbers are noise. When 4–5 kg have gone, work the target out again: a lighter body needs less.</p>
+
+      <p class="fine">Nutrition figures are estimates from standard ingredient values. Prices and product names change constantly. Not medical advice: with a condition that affects diet, run the plan past a doctor or a dietitian first.</p>
     </div>
   </section>
-
-  <!-- ============ RECIPES ============ -->
-  <section class="tab-panel" id="panel-recipes" hidden>
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Recipes</h2>
-        <p>Everything is written for <strong>two people</strong>. Quantities scale with the plate setting. Times are real weeknight times, not chef times.</p>
-      </div>
-      <div class="filters" id="filters"></div>
-      <div class="recipe-grid" id="recipeGrid"></div>
-    </div>
-  </section>
-
-  <!-- ============ SHOPPING ============ -->
-  <section class="tab-panel" id="panel-shop" hidden>
-    <div class="wrap">
-      <div class="section-head">
-        <h2>Shopping list</h2>
-        <p>Built from the week you selected. Prices are indicative <strong>K-Market/Prisma, November 2026</strong> — Lidl runs roughly 10–20% cheaper on the same basket. Tick items as you go; the list remembers. Switch <strong>EN / FI</strong> at the top: English names with the Finnish product name in grey underneath, so you can find it on the shelf.</p>
-      </div>
-      <div class="shop-toolbar">
-        <div class="seg" id="shopWeekSeg" role="group" aria-label="Week">
-          <button data-week="A" class="on">Week A</button>
-          <button data-week="B">Week B</button>
-        </div>
-        <button class="btn ghost small-btn" id="printBtn">Print / PDF</button>
-        <button class="btn ghost small-btn" id="clearChecks">Clear ticks</button>
-      </div>
-      <div class="shop-wrap">
-        <div id="shopList"></div>
-        <aside class="shop-side" id="shopSide"></aside>
-      </div>
-      <div class="callout" id="pantryCallout">
-        <h3>Pantry — buy once, lasts a month</h3>
-        <p>These are the things that make the plan cheap and fast. If you stock them now, weekly shops drop to fresh produce, protein and dairy.</p>
-        <ul class="pantry" id="pantryList"></ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============ BASICS ============ -->
-  <section class="tab-panel" id="panel-basics" hidden>
-    <div class="wrap">
-      <div class="section-head">
-        <h2>How to actually run this</h2>
-        <p>The plan is the easy part. This page is the part that decides whether it survives week three.</p>
-      </div>
-      <div class="prose">
-        <h3>1. The plate rule</h3>
-        <p>Half vegetables, a quarter protein (150–200 g cooked), a quarter starch (about one fist). Protein first, vegetables second, starch last — you eat less without noticing. This single rule replaces most calorie counting.</p>
-
-        <h3>2. Protein is the lever</h3>
-        <p>Aim for 25–35 g at every meal. In Finnish shops the cheap, boring workhorses are <strong>maitorahka</strong> (quark, ~11 g/100 g), <strong>kanan filee</strong>, <strong>kirjolohi</strong>, <strong>pakasteseiti</strong>, <strong>kananmuna</strong>, <strong>raejuusto</strong> and <strong>tonnikala vedessä</strong>. They do more for hunger than any "light" product on the shelf.</p>
-
-        <h3>3. Cook two portions of dinner, eat one for lunch</h3>
-        <p>Every dinner here is written for two and holds up as next-day lunch. That is the whole trick to a two-person plan: you cook once, you eat twice, you never stand in front of the fridge at 12:30 deciding.</p>
-
-        <h3>4. Where to buy what</h3>
-        <ul>
-          <li><strong>S-market / Prisma (Pirkka, Kotimaista)</strong> — best everyday base: chicken, quark, rye bread, frozen fish, own-brand spices.</li>
-          <li><strong>K-Market</strong> — smaller packs, better when you only need 300 g of something; Pirkka "Kevyt" dairy is solid.</li>
-          <li><strong>Lidl</strong> — cheapest for vegetables, nuts, olive oil, feta, tinned beans and frozen berries. Their weekly "teemaviikko" often carries Asian staples.</li>
-          <li><strong>Ethnic aisle (etninen hylly)</strong> in Prisma/Citymarket, or <strong>Vii Voan / Hakaniemi market</strong> in Helsinki — aji amarillo paste, gochujang, curry paste, proper soy sauce, rice noodles, cheap limes and coriander.</li>
-          <li><strong>Pakasteet</strong> — frozen fish, berries, edamame and spinach are the budget cheat codes. Frozen fish is fine for ceviche-style dishes if you thaw it in the fridge.</li>
-        </ul>
-
-        <h3>5. What we deliberately do not do</h3>
-        <ul>
-          <li>No "detox", no meal-replacement shakes, no skipping dinner.</li>
-          <li>No deep frying. The oven does the work — lomo saltado keeps its character with oven fries.</li>
-          <li>No exotic ingredient that only exists online. If aji amarillo paste is a hassle, the substitution is in the recipe.</li>
-        </ul>
-
-        <h3>6. Two people, two appetites</h3>
-        <p>Use the plate setting at the top: <strong>Lighter</strong> = 0.8×, <strong>Standard</strong> = 1×, <strong>Hearty</strong> = 1.2×. If one of you is hungrier, that person takes the hearty plate and the other the lighter one — same food, same cooking, different arithmetic. Nobody needs a separate meal.</p>
-
-        <h3>7. The week in one line</h3>
-        <p>Shop Sunday, cook Sunday and Wednesday, eat leftovers the rest of the time. If a day goes sideways, repeat a dinner from earlier in the week — the plan is a rotation, not a contract.</p>
-
-        <p class="fineprint">Prices and product names are indicative and change constantly. Nutrition figures are estimates from standard ingredient values, rounded to the nearest 10 kcal. Not medical advice — if you have a condition affecting diet, run it past a doctor or a dietitian first.</p>
-      </div>
-    </div>
-  </section>
-
 </main>
 
-<div class="modal" id="modal" hidden>
-  <div class="modal-backdrop" data-close></div>
-  <article class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
-    <button class="modal-close" data-close aria-label="Close">×</button>
-    <div id="modalBody"></div>
-  </article>
-</div>
+<div class="toast" id="toast" role="status" hidden></div>
 
-<footer class="foot">
-  <div class="wrap">
-    <p><strong>Mesa Dos</strong> — a household meal plan. Two people, three cuisines, one shopping list.</p>
-    <p class="muted">Built for a Finnish kitchen · prices indicative · nutrition estimated</p>
-  </div>
-</footer>
+<noscript><p class="noscript">Mesa Dos needs JavaScript to work out what day it is and what to cook.</p></noscript>
 
 <script src="assets/i18n.js"></script>
 <script src="assets/recipes.js"></script>
 <script src="assets/plan.js"></script>
+<script src="assets/household.js"></script>
 <script src="assets/shopping.js"></script>
+<script src="assets/core.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

@@ -1,11 +1,11 @@
 {
   "name": "mesa-dos",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "Two-person meal planning site: Peruvian, Asian and European cooking for Finnish supermarkets.",
+  "description": "What two people are cooking today: a two-week rotation, two plate sizes, one shopping list for Finnish supermarkets.",
   "scripts": {
     "start": "python3 -m http.server 8100 --bind 127.0.0.1",
-    "test": "node test/render.test.js && node test/i18n-coverage.test.js"
+    "test": "node test/data.test.js && node test/core.test.js && node test/render.test.js && node test/offline.test.js && node test/i18n-coverage.test.js"
   },
   "license": "UNLICENSED"
 }

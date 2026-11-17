@@ -1,4 +1,10 @@
-/* Mesa Dos — shopping baskets. Prices indicative: K-Market / Prisma, Finland, Nov 2026. */
+/* Mesa Dos — what the shop sells, and how recipe ingredients turn into it.
+
+   The weekly list is not written by hand. It is added up from the plan: every recipe on
+   the week, doubled where a dinner is also tomorrow's lunch, sized for the two of you,
+   then rounded up to what a Finnish supermarket actually sells.
+
+   Prices are indicative: K-Market / Prisma, November 2026. Keep them plausible. */
 const AISLE_ORDER = [
   "Hedelmät ja vihannekset",
   "Kala ja liha",
@@ -11,138 +17,101 @@ const AISLE_ORDER = [
 const STORES = [
   { name:"Prisma / S-market", note:"Base shop. Pirkka and Kotimaista own-brands are the value plays: chicken, quark, rye bread, frozen fish." },
   { name:"Lidl", note:"Cheapest for vegetables, feta, nuts, olive oil, tinned beans and frozen berries. Weekly theme weeks often carry Asian staples." },
-  { name:"K-Market", note:"For small packs and top-ups — 300 g of beef, one courgette, a bunch of coriander." },
+  { name:"K-Market", note:"For small packs and top-ups: 300 g of beef, one courgette, a pot of coriander." },
   { name:"Etninen hylly / Vii Voan / Hakaniemi", note:"Aji amarillo paste, gochujang, green curry paste, rice noodles, cheap limes and coriander." }
 ];
 
-const SHOP = {
-A: [
-  { aisle:"Hedelmät ja vihannekset", items:[
-    {id:"A01", n:"Peruna, jauhoinen", q:"2 kg", p:2.49, note:"lomo fries + sides"},
-    {id:"A02", n:"Bataatti", q:"1 kg", p:2.49, note:"ceviche"},
-    {id:"A03", n:"Punasipuli", q:"500 g", p:1.29},
-    {id:"A04", n:"Valkosipuli", q:"2 kpl", p:1.58},
-    {id:"A05", n:"Tomaatti", q:"800 g", p:3.99},
-    {id:"A06", n:"Kirsikkatomaatti", q:"250 g", p:1.99},
-    {id:"A07", n:"Kurkku", q:"2 kpl", p:2.38},
-    {id:"A08", n:"Paprika, punainen", q:"3 kpl", p:4.47},
-    {id:"A09", n:"Kesäkurpitsa", q:"2 kpl", p:2.98},
-    {id:"A10", n:"Parsakaali", q:"2 kpl", p:3.98},
-    {id:"A11", n:"Pak choi", q:"2 kpl", p:2.99},
-    {id:"A12", n:"Jäävuorisalaatti", q:"1 kpl", p:1.79, note:"wraps + pollo salad"},
-    {id:"A13", n:"Salaattisekoitus", q:"2 pussia", p:3.98},
-    {id:"A14", n:"Pinaatti, tuore", q:"200 g", p:1.99},
-    {id:"A15", n:"Porkkana", q:"1 kg", p:1.49},
-    {id:"A16", n:"Kevätsipuli", q:"2 nippua", p:2.38},
-    {id:"A17", n:"Korianteri", q:"2 ruukkua", p:3.98},
-    {id:"A18", n:"Lime", q:"6 kpl", p:2.99},
-    {id:"A19", n:"Sitruuna", q:"2 kpl", p:1.29},
-    {id:"A20", n:"Inkivääri", q:"1 pala", p:1.39},
-    {id:"A21", n:"Chili, punainen", q:"3 kpl", p:1.50},
-    {id:"A22", n:"Omena", q:"6 kpl", p:2.40},
-    {id:"A23", n:"Banaani", q:"1 kg", p:1.69}
-  ]},
-  { aisle:"Kala ja liha", items:[
-    {id:"A30", n:"Kanan filee", q:"800 g", p:8.49, note:"Greek tray + quinoa salad"},
-    {id:"A31", n:"Kanan reisikoipi, luuton", q:"600 g", p:5.49, note:"pollo a la brasa"},
-    {id:"A32", n:"Kanan jauheliha", q:"400 g", p:5.49, note:"Korean wraps"},
-    {id:"A33", n:"Naudan paistisuikale", q:"300 g", p:6.99, note:"lomo saltado"},
-    {id:"A34", n:"Kirjolohi filee", q:"300 g", p:6.49, note:"miso salmon"},
-    {id:"A35", n:"Seiti / pangasius, pakaste", q:"400 g", p:4.49, note:"ceviche + baked cod"},
-    {id:"A36", n:"Kananmuna", q:"10 kpl", p:3.19},
-    {id:"A37", n:"Tonnikala vedessä", q:"2 tlk", p:2.58}
-  ]},
-  { aisle:"Maito, juusto ja kananmuna", items:[
-    {id:"A40", n:"Maitorahka", q:"2 × 500 g", p:4.38},
-    {id:"A41", n:"Turkkilainen jogurtti", q:"500 g", p:1.99, note:"aji verde"},
-    {id:"A42", n:"Skyr", q:"500 g", p:3.19},
-    {id:"A43", n:"Raejuusto", q:"400 g", p:2.49},
-    {id:"A44", n:"Feta, kevyt", q:"200 g", p:2.79},
-    {id:"A45", n:"Maito, kevyt", q:"1 l", p:1.19}
-  ]},
-  { aisle:"Leipä ja vilja", items:[
-    {id:"A50", n:"Ruisleipä", q:"500 g", p:2.49},
-    {id:"A51", n:"Tortilla, täysjyvä", q:"1 paketti", p:2.29}
-  ]},
-  { aisle:"Säilykkeet ja kuivakaappi", items:[
-    {id:"A60", n:"Tomaattimurska", q:"2 tlk", p:2.58},
-    {id:"A61", n:"Kikherneet, säilyke", q:"2 tlk", p:1.98},
-    {id:"A62", n:"Valkoiset pavut, säilyke", q:"1 tlk", p:1.19},
-    {id:"A63", n:"Hummus", q:"200 g", p:2.29}
-  ]},
-  { aisle:"Pakasteet", items:[
-    {id:"A70", n:"Pakastemarjat", q:"500 g", p:2.99},
-    {id:"A71", n:"Pakastemaissi", q:"1 pussi", p:1.49},
-    {id:"A72", n:"Edamame", q:"400 g", p:2.99},
-    {id:"A73", n:"Pakasteherneet", q:"750 g", p:1.99}
-  ]}
-],
-B: [
-  { aisle:"Hedelmät ja vihannekset", items:[
-    {id:"B01", n:"Peruna, jauhoinen", q:"2 kg", p:2.49, note:"ají de gallina + causa"},
-    {id:"B02", n:"Punasipuli", q:"1 kg", p:2.29},
-    {id:"B03", n:"Valkosipuli", q:"2 kpl", p:1.58},
-    {id:"B04", n:"Tomaatti", q:"1 kg", p:4.58},
-    {id:"B05", n:"Kirsikkatomaatti", q:"400 g", p:2.99, note:"baked feta pasta"},
-    {id:"B06", n:"Kurkku", q:"2 kpl", p:2.38},
-    {id:"B07", n:"Paprika", q:"2 kpl", p:2.98},
-    {id:"B08", n:"Kesäkurpitsa", q:"2 kpl", p:2.98},
-    {id:"B09", n:"Parsakaali", q:"2 kpl", p:3.98},
-    {id:"B10", n:"Pak choi", q:"2 kpl", p:2.99},
-    {id:"B11", n:"Pinaatti, tuore", q:"300 g", p:2.98},
-    {id:"B12", n:"Porkkana", q:"1 kg", p:1.49},
-    {id:"B13", n:"Kevätsipuli", q:"2 nippua", p:2.38},
-    {id:"B14", n:"Korianteri", q:"2 ruukkua", p:3.98},
-    {id:"B15", n:"Minttu", q:"1 ruukku", p:1.79, note:"pho"},
-    {id:"B16", n:"Lime", q:"8 kpl", p:3.99},
-    {id:"B17", n:"Sitruuna", q:"1 kpl", p:0.69},
-    {id:"B18", n:"Inkivääri", q:"1 pala", p:1.39},
-    {id:"B19", n:"Chili", q:"3 kpl", p:1.50},
-    {id:"B20", n:"Avokado", q:"1 kpl", p:1.49, note:"causa"},
-    {id:"B21", n:"Salaattisekoitus", q:"2 pussia", p:3.98},
-    {id:"B22", n:"Omena", q:"6 kpl", p:2.40},
-    {id:"B23", n:"Banaani", q:"1 kg", p:1.69},
-    {id:"B24", n:"Selleri", q:"1 varsi", p:0.99, note:"minestrone"}
-  ]},
-  { aisle:"Kala ja liha", items:[
-    {id:"B30", n:"Kanan filee", q:"1,1 kg", p:11.49, note:"ají, curry, pho"},
-    {id:"B31", n:"Sian jauheliha 10%", q:"400 g", p:4.29},
-    {id:"B32", n:"Kananmuna", q:"10 kpl", p:3.19},
-    {id:"B33", n:"Tonnikala vedessä", q:"3 tlk", p:3.87, note:"causa"}
-  ]},
-  { aisle:"Maito, juusto ja kananmuna", items:[
-    {id:"B40", n:"Maitorahka", q:"2 × 500 g", p:4.38},
-    {id:"B41", n:"Skyr", q:"500 g", p:3.19},
-    {id:"B42", n:"Raejuusto", q:"400 g", p:2.49},
-    {id:"B43", n:"Feta, kevyt", q:"200 g", p:2.79},
-    {id:"B44", n:"Maito, kevyt", q:"1,5 l", p:1.79},
-    {id:"B45", n:"Parmesan / Grana Padano", q:"50 g", p:2.49, note:"minestrone"}
-  ]},
-  { aisle:"Leipä ja vilja", items:[
-    {id:"B50", n:"Ruisleipä", q:"500 g", p:2.49}
-  ]},
-  { aisle:"Säilykkeet ja kuivakaappi", items:[
-    {id:"B60", n:"Tomaattimurska", q:"1 tlk", p:1.29},
-    {id:"B61", n:"Kikherneet, säilyke", q:"1 tlk", p:0.99},
-    {id:"B62", n:"Valkoiset pavut, säilyke", q:"1 tlk", p:1.19},
-    {id:"B63", n:"Kookosmaito, kevyt", q:"1 tlk", p:1.99}
-  ]},
-  { aisle:"Pakasteet", items:[
-    {id:"B70", n:"Pakastemarjat", q:"500 g", p:2.99},
-    {id:"B71", n:"Edamame", q:"400 g", p:2.99}
-  ]}
-]
+/* PRODUCTS — what goes in the basket every week.
+     a      aisle (index into AISLE_ORDER)
+     u      the unit amounts are added up in
+     pack   how much one purchase holds, in u (default 1)
+     p      price of one purchase
+     sold   what one purchase is called on the list ("pussi", "tlk") when that reads better
+            than the amount
+     loose  sold by weight: show the total rather than "2 × 500 g"
+     per    how recipe units convert into u — { kynttä: 0.1 } = ten cloves to a bulb */
+const PRODUCTS = {
+  /* ---- fruit and vegetables ---- */
+  "Peruna, jauhoinen":   { a:0, u:"g", pack:1000, p:1.25, loose:1 },
+  "Bataatti":            { a:0, u:"g", pack:500, p:1.25, loose:1 },
+  "Punasipuli":          { a:0, u:"kpl", p:0.30 },
+  "Sipuli":              { a:0, u:"kpl", p:0.20 },
+  "Valkosipuli":         { a:0, u:"kpl", p:0.79, per:{ "kynttä":0.1 } },
+  "Tomaatti":            { a:0, u:"kpl", p:0.50 },
+  "Kirsikkatomaatti":    { a:0, u:"g", pack:250, p:1.99 },
+  "Kurkku":              { a:0, u:"kpl", p:1.19 },
+  "Paprika":             { a:0, u:"kpl", p:1.49 },
+  "Kesäkurpitsa":        { a:0, u:"kpl", p:1.49 },
+  "Parsakaali":          { a:0, u:"g", pack:400, p:1.99, sold:"kpl" },
+  "Pak choi":            { a:0, u:"kpl", p:1.49, per:{ g:1/150 } },
+  "Jäävuorisalaatti":    { a:0, u:"kpl", p:1.79 },
+  "Salaattisekoitus":    { a:0, u:"pussi", p:1.99, per:{ "kourallinen":0.25, "iso kourallinen":0.35 } },
+  "Pinaatti, tuore":     { a:0, u:"g", pack:100, p:0.99 },
+  "Porkkana":            { a:0, u:"kpl", pack:12, p:1.49, sold:"pussi" },
+  "Kevätsipuli":         { a:0, u:"kpl", pack:5, p:1.19, sold:"nippu" },
+  /* a recipe's "one pot" of herbs is really half of one: a pot does two dishes */
+  "Korianteri":          { a:0, u:"ruukku", p:1.99, per:{ "ruukku":0.5, "kourallinen":0.25 } },
+  "Minttu":              { a:0, u:"ruukku", p:1.79, per:{ "ruukku":0.5 } },
+  "Basilika":            { a:0, u:"ruukku", p:1.79, per:{ "ruukku":0.5 } },
+  "Lime":                { a:0, u:"kpl", p:0.50 },
+  "Sitruuna":            { a:0, u:"kpl", p:0.65, per:{ rkl:0.25 } },
+  "Inkivääri":           { a:0, u:"g", pack:100, p:1.39, sold:"pala", per:{ tl:5, rkl:15, cm:10 } },
+  "Chili":               { a:0, u:"kpl", p:0.50 },
+  "Avokado":             { a:0, u:"kpl", p:1.49 },
+  "Selleri":             { a:0, u:"varsi", p:0.99 },
+  "Omena":               { a:0, u:"kpl", p:0.40 },
+  "Banaani":             { a:0, u:"kpl", p:0.30 },
+
+  /* ---- fish and meat ---- */
+  "Kanan filee":              { a:1, u:"g", pack:400, p:4.29 },
+  "Kanan reisikoipi, luuton": { a:1, u:"g", pack:600, p:5.49 },
+  "Kanan jauheliha":          { a:1, u:"g", pack:400, p:5.49 },
+  "Sian jauheliha 10%":       { a:1, u:"g", pack:400, p:4.29 },
+  "Naudan paistisuikale":     { a:1, u:"g", pack:300, p:6.99 },
+  "Kirjolohi filee":          { a:1, u:"g", pack:300, p:6.49 },
+  "Kalkkunaleike":            { a:1, u:"g", pack:200, p:2.49 },
+
+  /* ---- dairy, cheese and eggs ---- */
+  "Maitorahka":            { a:2, u:"g", pack:500, p:2.19 },
+  "Skyr":                  { a:2, u:"g", pack:500, p:3.19 },
+  "Raejuusto":             { a:2, u:"g", pack:200, p:1.25 },
+  "Turkkilainen jogurtti": { a:2, u:"g", pack:400, p:1.89 },
+  "Feta, kevyt":           { a:2, u:"g", pack:200, p:2.79 },
+  "Juusto, kevyt":         { a:2, u:"g", pack:150, p:2.29 },
+  "Maito, kevyt":          { a:2, u:"ml", pack:1000, p:1.19, per:{ dl:100 } },
+  "Kananmuna":             { a:2, u:"kpl", pack:10, p:3.19 },
+  "Hummus":                { a:2, u:"g", pack:200, p:2.29, per:{ rkl:20 } },
+
+  /* ---- bread and grains ---- */
+  "Ruisleipä":          { a:3, u:"viipale", pack:12, p:2.49, sold:"pussi" },
+  "Tortilla, täysjyvä": { a:3, u:"kpl", pack:8, p:2.29, sold:"pkt" },
+
+  /* ---- tins ---- */
+  "Tomaattimurska":           { a:4, u:"g", pack:400, p:1.29, sold:"tlk" },
+  "Kikherneet, säilyke":      { a:4, u:"tlk", p:0.99 },
+  "Valkoiset pavut, säilyke": { a:4, u:"tlk", p:1.19 },
+  "Kookosmaito, kevyt":       { a:4, u:"ml", pack:400, p:1.99, sold:"tlk" },
+  "Tonnikala vedessä":        { a:4, u:"tlk", p:1.29, per:{ "tlk (150 g)":1 } },
+
+  /* ---- frozen ---- */
+  "Seiti / pangasius, pakaste": { a:5, u:"g", pack:400, p:4.49 },
+  "Pakastemarjat":              { a:5, u:"g", pack:500, p:2.99 },
+  "Pakastemaissi":              { a:5, u:"g", pack:450, p:1.49, sold:"pussi" },
+  "Edamame":                    { a:5, u:"g", pack:400, p:2.99 }
 };
 
-/* Buy once — lasts about a month of this plan */
+/* PANTRY — bought once, lasts weeks. Not on the weekly list; the shopping page shows which
+   of these the week's cooking uses, so the cupboard can be checked before leaving. */
 const PANTRY = [
   { n:"Oliiviöljy", q:"500 ml", p:5.49 },
   { n:"Soijakastike", q:"250 ml", p:2.39 },
   { n:"Seesamiöljy", q:"150 ml", p:4.19 },
+  { n:"Etikka: punaviini + riisi", q:"2 × 250 ml", p:4.50 },
   { n:"Gochujang", q:"500 g", p:4.99, note:"Korean wraps — keeps a year" },
-  { n:"Aji amarillo paste", q:"220 g", p:6.90, note:"ethnic aisle; sub: kurkuma + chili" },
+  { n:"Aji amarillo paste", q:"220 g", p:6.90, note:"ethnic aisle; sub: turmeric + chilli" },
   { n:"Miso", q:"300 g", p:4.49 },
   { n:"Green curry paste", q:"100 g", p:3.49 },
+  { n:"Liemi: kana + kasvis", q:"fondi / kuutiot", p:3.50, note:"pho and minestrone" },
   { n:"Hunaja", q:"400 g", p:3.49 },
   { n:"Maapähkinävoi, sokeriton", q:"350 g", p:3.29 },
   { n:"Kaurahiutale", q:"1 kg", p:1.99 },
@@ -155,6 +124,86 @@ const PANTRY = [
   { n:"Chia", q:"200 g", p:3.99 },
   { n:"Seesaminsiemenet", q:"100 g", p:3.49 },
   { n:"Saksanpähkinä", q:"200 g", p:4.49 },
-  { n:"Mausteet: jeera, paprikajauhe, oregano, kaneli", q:"—", p:6.00, note:"if starting from zero" },
-  { n:"Tähtianis + kanelitanko", q:"—", p:4.00, note:"pho" }
+  { n:"Oliivit", q:"1 tlk", p:1.99, note:"ají de gallina" },
+  { n:"Parmesan / Grana Padano", q:"150 g", p:3.99, note:"a wedge keeps a month" },
+  { n:"Mausteet: jeera, paprikajauhe, oregano, kaneli, chilihiutaleet", q:"—", p:7.50, note:"if starting from zero", mix:1 },
+  { n:"Tähtianis + kanelitanko", q:"—", p:4.00, note:"pho", mix:1 }
 ];
+
+/* BUY — an ingredient line that is not itself the name of a product or pantry item.
+     "Name"                  it is that product (or pantry item) under another name
+     [["Name", amount], …]   a fixed amount of each, in the product's own unit, for the
+                             recipe as written ("salad to serve" has to become something)
+     null                    nothing to buy: salt, pepper, last night's soup */
+const SPICES = "Mausteet: jeera, paprikajauhe, oregano, kaneli, chilihiutaleet";
+const BUY = {
+  "Aji amarillo paste (or 1 tl chili + kurkuma)": "Aji amarillo paste",
+  "Aji amarillo paste (or 1 tl kurkuma + 1 tl chili)": "Aji amarillo paste",
+  "Chili (aji limo if you can)": "Chili",
+  "Jalapeño or vihreä chili (aji verde)": "Chili",
+  "Chili flakes": SPICES,
+  "Edamame, pakaste": "Edamame",
+  "Feta (kevyt)": "Feta, kevyt",
+  "Inkivääri, raastettu": "Inkivääri",
+  "Jeera jauhettuna": SPICES,
+  "Jeera, suola, mustapippuri": SPICES,
+  "Juusto (kevyt, esim. Oltermanni)": "Juusto, kevyt",
+  "Kanalientä (fondi)": "Liemi: kana + kasvis",
+  "Kasvisliemi": "Liemi: kana + kasvis",
+  "Kanan filee (or leftover roast chicken)": "Kanan filee",
+  "Kanan filee or reisikoipi": "Kanan filee",
+  "Kanan reisikoipi, luuton ja nahaton": "Kanan reisikoipi, luuton",
+  "Kananmuna, kovaksi keitetty": "Kananmuna",
+  "Kaneli": SPICES,
+  "Kanelitanko": "Tähtianis + kanelitanko",
+  "Tähtianis": "Tähtianis + kanelitanko",
+  "Kirjolohi or vaalea kala (pakaste seiti works)": "Seiti / pangasius, pakaste",
+  "Seiti, turska or pangasius (pakaste ok)": "Seiti / pangasius, pakaste",
+  "Korianteri (aji verde)": "Korianteri",
+  "Korianteri or thai basil": "Korianteri",
+  "Persilja or korianteri": "Korianteri",
+  "Korianteri + minttu": [["Korianteri", 0.5], ["Minttu", 0.5]],
+  "Kurkku, tomaatti, punasipuli": [["Kurkku", 0.25], ["Tomaatti", 1], ["Punasipuli", 0.25]],
+  "Tomaatti, kurkku, punasipuli": [["Tomaatti", 2], ["Kurkku", 0.5], ["Punasipuli", 0.5]],
+  "Lime (aji verde)": "Lime",
+  "Linssit, kuivat (or 2 tlk valmiita)": "Linssit, kuivat",
+  "Maapähkinävoi": "Maapähkinävoi, sokeriton",
+  "Maito": "Maito, kevyt",
+  "Maito (kevyt)": "Maito, kevyt",
+  "Makeutusaine or ½ tl hunajaa": "Hunaja",
+  "Merisuola": null,
+  "Minestrone (edelliseltä illalta)": null,
+  "Miso (or 1 rkl soijaa + 1 tl hunajaa)": "Miso",
+  "Mustapippuri, sitruuna": [["Sitruuna", 0.25]],
+  "Sitruuna, mustapippuri": [["Sitruuna", 0.25]],
+  "Sitruunamehu": "Sitruuna",
+  "Sitruunan kuori": "Sitruuna",
+  "Naudan paistisuikale (or sisäfileesuikale)": "Naudan paistisuikale",
+  "Oliivi": "Oliivit",
+  "Oliiviöljy or voi": "Oliiviöljy",
+  "Oliiviöljy, basilika, mustapippuri": [["Basilika", 0.25], ["Oliiviöljy", 0]],
+  "Oregano": SPICES,
+  "Oregano, kuivattu": SPICES,
+  "Paprikajauhe": SPICES,
+  "Pak choi or parsakaali": "Pak choi",
+  "Pakastemarjat (mustikka, vadelma)": "Pakastemarjat",
+  "Paprika (mix colours)": "Paprika",
+  "Punainen paprika": "Paprika",
+  "Parmesan (or Grana Padano)": "Parmesan / Grana Padano",
+  "Peruna": "Peruna, jauhoinen",
+  "Pinaatti": "Pinaatti, tuore",
+  "Porkkana, raastettu": "Porkkana",
+  "Punaviinietikka (or omenaviinietikka)": "Etikka: punaviini + riisi",
+  "Riisiviinietikka": "Etikka: punaviini + riisi",
+  "Quinoa, keitetty": "Quinoa",
+  "Ruisleipä (murennettuna, suurustukseen)": "Ruisleipä",
+  "Saksanpähkinä, rouhittu": "Saksanpähkinä",
+  "Salaattilehdet": "Salaattisekoitus",
+  "Salaattilehdet, lime, suola": [["Salaattisekoitus", 0.5], ["Lime", 1]],
+  "Selleri (if you have it)": "Selleri",
+  "Suola, mustapippuri": null,
+  "Suola, mustapippuri, muskottipähkinä": null,
+  "Suola, mustapippuri, tilli": null,
+  "Turkkilainen jogurtti (aji verde)": "Turkkilainen jogurtti",
+  "Täysjyväpasta (small shape)": "Täysjyväpasta"
+};

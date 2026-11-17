@@ -1,358 +1,758 @@
-/* Mesa Dos — UI logic. No dependencies, no build step. */
+/* Mesa Dos — the page. Reads the data files and core.js, draws five views and a recipe
+   screen, and remembers a few things on the phone. No dependencies, no build step. */
 (function () {
   "use strict";
 
+  var M = MESA;
   var $ = function (s, r) { return (r || document).querySelector(s); };
   var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
-  var RID = {};
-  RECIPES.forEach(function (r) { RID[r.id] = r; });
 
+  /* ---------- storage ----------
+     localStorage throws in some in-app browsers and private modes. Everything goes through
+     here so the page still works; what is ticked then lasts for the visit only. */
   var LS = "mesa2.";
-  var state = {
-    week: localStorage.getItem(LS + "week") || "A",
-    plate: localStorage.getItem(LS + "plate") || "normal",
-    lang: localStorage.getItem(LS + "lang") || "en",
-    cuisine: "all",
-    meal: "all"
+  var mem = {};
+  var store = {
+    get: function (k) {
+      try { var v = localStorage.getItem(LS + k); if (v !== null) return v; } catch (e) { /* blocked */ }
+      return k in mem ? mem[k] : null;
+    },
+    set: function (k, v) { mem[k] = v; try { localStorage.setItem(LS + k, v); } catch (e) { /* blocked */ } },
+    del: function (k) { delete mem[k]; try { localStorage.removeItem(LS + k); } catch (e) { /* blocked */ } },
+    json: function (k) { try { return JSON.parse(store.get(k) || "{}") || {}; } catch (e) { return {}; } }
   };
-
-  /* ---------- language ---------- */
-  var CUIS = { peru: { en: "Peruvian", fi: "Perulainen" }, asia: { en: "Asian", fi: "Aasialainen" }, europe: { en: "European", fi: "Eurooppalainen" } };
-  var MEALNAME = { dinner: { en: "Dinner", fi: "Päivällinen" }, breakfast: { en: "Breakfast", fi: "Aamiainen" }, lunch: { en: "Lunch", fi: "Lounas" }, snack: { en: "Snack", fi: "Välipala" } };
-
-  function enOf(s) {
-    if (s == null || s === "") return s;
-    if (I18N[s]) return I18N[s];
-    var o = String(s);
-    for (var i = 0; i < I18N_WORDS.length; i++) o = o.replace(I18N_WORDS[i][0], I18N_WORDS[i][1]);
-    return o;
+  /* ticks are kept per date; drop the ones from weeks that are over */
+  function prune(today) {
+    try {
+      var cutoff = M.iso(M.addDays(today, -21));
+      for (var i = localStorage.length - 1; i >= 0; i--) {
+        var m = /^mesa2\.(?:checks|need|prep)\.(\d{4}-\d\d-\d\d)$/.exec(localStorage.key(i) || "");
+        if (m && m[1] < cutoff) localStorage.removeItem(localStorage.key(i));
+      }
+    } catch (e) { /* blocked */ }
   }
-  function L() { return state.lang; }
-  function P(s) { return L() === "en" ? enOf(s) : s; }
-  function ALT(s) { var o = L() === "en" ? s : enOf(s); return o !== P(s) ? o : ""; }
-  function S(k) { return SLOTS[L()][k]; }
-  function plateLabel() { return L() === "fi" ? PLATE[state.plate].labelFi : PLATE[state.plate].label; }
 
-  function mult() { return PLATE[state.plate].k; }
-  function num(n) { return Math.round(n / 10) * 10; }
-  function fi(n) { return String(n).replace(".", ","); }
-  function kcal(n) { return num(n).toLocaleString("fi-FI"); }
-  function euro(n) { return fi(n.toFixed(2)) + " €"; }
+  /* ---------- state ---------- */
+  function now() {
+    return (typeof window.MESA_NOW === "string" && M.parseISO(window.MESA_NOW)) || M.atNoon(new Date());
+  }
+  var today = now();
+  var state = {
+    lang: store.get("lang") === "fi" ? "fi" : "en",
+    people: loadPeople(),
+    route: { view: "today" },
+    who: "both", plus: false,          /* recipe screen: who it is for, and tomorrow's lunch */
+    meal: "all", cuisine: "all", q: "" /* recipe list filters */
+  };
+  var cooked = {};                     /* ticks on the recipe screen, for this visit */
+  var DINNER_AVG = (function () {
+    var d = RECIPES.filter(function (r) { return r.meal === "dinner"; });
+    return d.reduce(function (s, r) { return s + r.kcal; }, 0) / d.length;
+  })();
+
+  function loadPeople() {
+    var saved = store.json("people");
+    return PEOPLE.map(function (p) {
+      var s = saved[p.id] || {}, k = Number(s.kcal);
+      return {
+        id: p.id,
+        name: typeof s.name === "string" && s.name.trim() ? s.name.trim().slice(0, 16) : p.name,
+        kcal: k >= 1000 && k <= 3500 ? k : p.kcal
+      };
+    });
+  }
+  function savePeople() {
+    var o = {};
+    state.people.forEach(function (p) { o[p.id] = { name: p.name, kcal: p.kcal }; });
+    store.set("people", JSON.stringify(o));
+  }
+
+  /* ---------- words and numbers ---------- */
+  var CUIS = { peru: { en: "Peruvian", fi: "Perulainen" }, asia: { en: "Asian", fi: "Aasialainen" }, europe: { en: "European", fi: "Eurooppalainen" } };
+  function L() { return state.lang; }
+  function S(k, vars) {
+    var v = SLOTS[L()][k];
+    if (v == null) v = SLOTS.en[k];
+    if (v == null) return k;
+    return vars ? v.replace(/\{(\w+)\}/g, function (m, n) { return vars[n] != null ? vars[n] : m; }) : v;
+  }
+  function P(s) { return L() === "en" ? M.enOf(s) : s; }
+  function ALT(s) { var o = L() === "en" ? s : M.enOf(s); return o !== P(s) ? o : ""; }
+  /* the secondary name is always in the other language — say so for screen readers */
+  function altSpan(a) { return a ? ' <span class="alt" lang="' + (L() === "en" ? "fi" : "en") + '">' + esc(a) + '</span>' : ""; }
   function esc(s) {
     return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
   }
+  function kcal(n) { return (Math.round(n / 10) * 10).toLocaleString("fi-FI"); }
+  function euro(n) { return n.toFixed(2).replace(".", ",") + " €"; }
+  function euros(n) { return Math.round(n) + " €"; }       /* totals: no false precision */
+  function locale() { return L() === "fi" ? "fi-FI" : "en-GB"; }
+  function dateLong(d) { return d.toLocaleDateString(locale(), { weekday: "long", day: "numeric", month: "long" }); }
+  function dateShort(d) { return d.toLocaleDateString(locale(), { day: "numeric", month: "short" }); }
+  function weekdayShort(d) { return d.toLocaleDateString(locale(), { weekday: "short" }); }
+  function weekdayLong(d) { return d.toLocaleDateString(locale(), { weekday: "long" }); }
+  function cap(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-  function qty(ing) {
-    var u = ing.u || "";
-    if (!ing.s || typeof ing.n !== "number") {
-      if (ing.n === "" || ing.n == null) return u;
-      return ing.n + (u ? " " + u : "");
+  /* one number per person, always in the same colour: yellow, then lilac */
+  function chips(base) {
+    return '<span class="ks">' + state.people.map(function (p, i) {
+      return '<span class="k k' + (i + 1) + '"><span class="vh">' + esc(p.name) + ' </span>' + kcal(base * M.mult(p)) + '</span>';
+    }).join("") + '</span>';
+  }
+  /* how to split the pan: two segments as wide as each share */
+  function split(baseKcal, baseProtein) {
+    var sh = M.shares(state.people);
+    return '<div class="split">' + state.people.map(function (p, i) {
+      return '<div class="seg-plate p' + (i + 1) + '" style="flex-basis:' + (sh[i] * 100).toFixed(1) + '%">' +
+        '<b>' + esc(p.name) + '</b>' +
+        '<span class="num">' + kcal(baseKcal * M.mult(p)) + ' kcal</span>' +
+        '<span class="sub">' + Math.round(baseProtein * M.mult(p)) + ' g ' + S("protein") + '</span>' +
+        '</div>';
+    }).join("") + '</div>';
+  }
+  function recipeHref(r, portions) { return "#/recipe/" + r.id + (portions ? "/" + portions : ""); }
+
+  /* ---------- routes ----------
+     #/            today            #/day/2026-11-18   another day
+     #/week        this week        #/week/2026-11-23  the week starting that Monday
+     #/shop        the list         #/shop/2026-11-23
+     #/recipes     all recipes      #/recipe/a1/4      one recipe, cooked for 4 portions
+     #/us          the two of you */
+  var VIEWS = ["today", "week", "shop", "recipes", "recipe", "us"];
+  var LEGACY = { plan: "today", basics: "us" };
+  function parseRoute(hash) {
+    var parts = String(hash || "").replace(/^#\/?/, "").split("/");
+    var view = LEGACY[parts[0]] || parts[0] || "today";
+    if (view === "day") {
+      var d = M.parseISO(parts[1]);
+      return { view: "today", date: d || today };
     }
-    var v = ing.n * mult(), r;
-    if (u === "kpl") { r = Math.round(v * 2) / 2; r = r % 1 === 0 ? String(r) : fi(String(r)); }
-    else if (v >= 100) { r = String(Math.round(v / 10) * 10); }
-    else if (v >= 20) { r = String(Math.round(v / 5) * 5); }
-    else { r = fi(String(Math.round(v * 10) / 10)); }
-    return r + " " + u;
-  }
-  function qtyText(s) { return L() === "en" ? enOf(s) : s; }
-
-  /* ---------- tabs ---------- */
-  var TABS = ["plan", "recipes", "shop", "basics"];
-  function showTab(name) {
-    if (TABS.indexOf(name) < 0) name = "plan";
-    TABS.forEach(function (t) { $("#panel-" + t).hidden = t !== name; });
-    $$(".tab").forEach(function (b) { b.classList.toggle("active", b.getAttribute("data-tab") === name); });
-    window.scrollTo({ top: 0, behavior: "auto" });
-  }
-  $("#tabs").addEventListener("click", function (e) {
-    var b = e.target.closest(".tab");
-    if (!b) return;
-    var t = b.getAttribute("data-tab");
-    if (location.hash !== "#" + t) location.hash = t; else showTab(t);
-  });
-  window.addEventListener("hashchange", function () { showTab(location.hash.replace("#", "")); });
-  $$("[data-goto]").forEach(function (b) {
-    b.addEventListener("click", function () { location.hash = b.getAttribute("data-goto"); });
-  });
-
-  /* ---------- hero ---------- */
-  function shopTotal(week) {
-    var t = 0;
-    SHOP[week].forEach(function (a) { a.items.forEach(function (i) { t += i.p; }); });
-    return t;
-  }
-  function renderHero() {
-    var t = shopTotal("A");
-    $("#heroStats").innerHTML = [
-      '<div class="stat"><b>' + kcal(TARGET.typical) + '</b><span>kcal a day, each</span></div>',
-      '<div class="stat"><b>' + TARGET.protein + ' g</b><span>protein a day</span></div>',
-      '<div class="stat"><b>' + euro(t) + '</b><span>one week, two people</span></div>',
-      '<div class="stat"><b>' + RECIPES.length + '</b><span>recipes, 2 servings each</span></div>'
-    ].join("");
-    $("#kcalTargetInline").textContent = kcal(TARGET.typical);
-  }
-
-  /* ---------- week plan ---------- */
-  function mealInfo(entry) {
-    if (entry.leftover) {
-      var r = RID[entry.leftover];
-      return { r: r, name: r.name, kcal: r.kcal, protein: r.protein, leftover: true };
+    if (VIEWS.indexOf(view) < 0) view = "today";
+    if (view === "today") return { view: "today", date: today };
+    if (view === "week" || view === "shop") {
+      var mon = M.parseISO(parts[1]);
+      return { view: view, monday: mon ? M.monday(mon) : null };
     }
-    var x = RID[entry.id];
-    return { r: x, name: x.name, kcal: x.kcal, protein: x.protein, leftover: false };
+    if (view === "recipe") {
+      if (!M.RID[parts[1]]) return { view: "recipes" };
+      return { view: "recipe", id: parts[1], portions: parts[2] === "4" ? 4 : 2 };
+    }
+    return { view: view };
+  }
+  function routeKey(r) {
+    return r.view + (r.date ? M.iso(r.date) : "") + (r.monday ? M.iso(r.monday) : "") + (r.id || "");
   }
 
-  function renderPlan() {
-    var days = PLAN[state.week];
-    $("#days").innerHTML = days.map(function (d) {
-      var stack = [
-        { slot: "breakfast", entry: { id: d.bf } },
-        { slot: "lunch", entry: d.lunch },
-        { slot: "dinner", entry: { id: d.dinner } },
-        { slot: "snack", entry: { id: d.snack } }
-      ].map(function (m) {
-        var info = mealInfo(m.entry);
-        var prefix = info.leftover ? S("leftover") + " · " : "";
-        return '<li><button class="meal" data-recipe="' + info.r.id + '">' +
-          '<span class="slot">' + S(m.slot) + '</span>' +
-          '<span class="what">' + prefix + esc(info.name) +
-            (info.leftover ? '<small>' + S("before") + '</small>' : '<small>' + info.r.time + ' min · ' + esc(CUIS[info.r.cuisine][L()]) + '</small>') +
-          '</span>' +
-          '<span class="kp">' + kcal(info.kcal * mult()) + '</span>' +
-          '</button></li>';
-      }).join("");
-
-      if (d.extra) {
-        stack += '<li><div class="meal extra"><span class="slot">' + S("topup") + '</span>' +
-          '<span class="what">' + esc(d.extra.text) + '<small>' + S("hungry") + '</small></span>' +
-          '<span class="kp">' + kcal(d.extra.kcal * mult()) + '</span></div></li>';
-      }
-
-      var tot = 0, prot = 0;
-      [{ id: d.bf }, d.lunch, { id: d.dinner }, { id: d.snack }].forEach(function (e) {
-        var i = mealInfo(e); tot += i.kcal; prot += i.protein;
-      });
-      if (d.extra) { tot += d.extra.kcal; prot += d.extra.protein; }
-
-      return '<article class="day">' +
-        '<div class="day-head"><h3>' + d.day + '</h3><span class="kcal">' + kcal(tot * mult()) + ' kcal · ' + Math.round(prot * mult()) + ' g</span></div>' +
-        '<ul class="meals">' + stack + '</ul>' +
-        '<div class="day-foot"><span>' + esc(WEEK_NOTE[state.week].split(":")[0]) + '</span><span>' + S("portions2") + '</span></div>' +
-        '</article>';
-    }).join("");
-
-    $$("#days .meal[data-recipe]").forEach(function (b) {
-      b.addEventListener("click", function () { openRecipe(b.getAttribute("data-recipe")); });
-    });
-
-    $("#plateHint").textContent = plateLabel() + " — " + (L() === "fi" ? "annokset ja kalorit kertoimella " : "portions and calories at ") +
-      (mult() === 1 ? "1×" : fi(String(mult())) + "×") + (L() === "fi" ? ". Kypsennysaika ei muutu." : ". Cooking times don't change.");
+  var trail = [];        /* where we have been, to tell "back" from "forward" */
+  var scrolls = {};
+  function go(first) {
+    var prev = state.route;
+    var next = parseRoute(location.hash);
+    var key = routeKey(next), back = false;
+    if (!first) {
+      scrolls[routeKey(prev)] = window.pageYOffset || 0;
+      if (trail.length > 1 && trail[trail.length - 2] === key) { trail.pop(); back = true; }
+      else if (trail[trail.length - 1] !== key) trail.push(key);
+    } else {
+      trail.push(key);
+    }
+    if (prev.view === "recipe" && next.view !== "recipe") releaseWake();
+    if (next.view === "recipe" && (prev.view !== "recipe" || prev.id !== next.id)) {
+      state.who = "both";
+      state.plus = next.portions === 4;
+    }
+    state.route = next;
+    render();
+    window.scrollTo(0, back ? (scrolls[key] || 0) : 0);
+    if (!first) { var main = $("#main"); if (main && main.focus) main.focus({ preventScroll: true }); }
   }
 
-  /* ---------- controls ---------- */
-  function syncSegs() {
-    $$("#weekSeg button,#shopWeekSeg button").forEach(function (b) {
-      b.classList.toggle("on", b.getAttribute("data-week") === state.week);
+  var TITLES = { today: "navToday", week: "navWeek", shop: "navShop", recipes: "navRecipes", us: "navUs" };
+  function render() {
+    var v = state.route.view;
+    VIEWS.forEach(function (name) { $("#view-" + name).hidden = name !== v; });
+    $$(".nav a").forEach(function (a) {
+      var on = a.getAttribute("data-nav") === (v === "recipe" ? "recipes" : v);
+      if (on) a.setAttribute("aria-current", "page"); else a.removeAttribute("aria-current");
     });
-    $$("#plateSeg button").forEach(function (b) {
-      b.classList.toggle("on", b.getAttribute("data-plate") === state.plate);
-    });
+    ({ today: renderToday, week: renderWeek, shop: renderShop, recipes: renderRecipes, recipe: renderRecipe, us: renderUs })[v]();
+    document.title = (v === "recipe" ? M.RID[state.route.id].name : S(TITLES[v])) + " · Mesa Dos";
+  }
+
+  /* Static labels in index.html carry data-i18n; the English there is the no-script fallback. */
+  function applyChrome() {
+    document.documentElement.lang = L();
+    $$("[data-i18n]").forEach(function (el) { el.textContent = S(el.getAttribute("data-i18n")); });
     $$("#langSeg button").forEach(function (b) {
-      b.classList.toggle("on", b.getAttribute("data-lang") === state.lang);
-    });
-  }
-  $$("#weekSeg button,#shopWeekSeg button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      state.week = b.getAttribute("data-week");
-      localStorage.setItem(LS + "week", state.week);
-      syncSegs(); renderPlan(); renderShop();
-    });
-  });
-  $$("#plateSeg button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      state.plate = b.getAttribute("data-plate");
-      localStorage.setItem(LS + "plate", state.plate);
-      syncSegs(); renderPlan(); renderRecipes();
-      if (!$("#modal").hidden && $("#modalBody").dataset.rid) openRecipe($("#modalBody").dataset.rid);
-    });
-  });
-  $$("#langSeg button").forEach(function (b) {
-    b.addEventListener("click", function () {
-      state.lang = b.getAttribute("data-lang");
-      localStorage.setItem(LS + "lang", state.lang);
-      document.documentElement.lang = state.lang;
-      syncSegs(); renderPlan(); renderRecipes(); renderShop();
-      if (!$("#modal").hidden && $("#modalBody").dataset.rid) openRecipe($("#modalBody").dataset.rid);
-    });
-  });
-
-  /* ---------- recipes ---------- */
-  var CUISINES = [["all", "All"], ["peru", "Peruvian"], ["asia", "Asian"], ["europe", "European"]];
-  var MEALS = [["all", "Everything"], ["dinner", "Dinners"], ["breakfast", "Breakfasts"], ["lunch", "Lunches"], ["snack", "Snacks"]];
-
-  function renderFilters() {
-    $("#filters").innerHTML = MEALS.map(function (m) {
-      return '<button class="chip' + (state.meal === m[0] ? " on" : "") + '" data-meal="' + m[0] + '">' + m[1] + '</button>';
-    }).join("") + '<span style="flex:1 1 12px"></span>' + CUISINES.map(function (c) {
-      return '<button class="chip' + (state.cuisine === c[0] ? " on" : "") + '" data-cuisine="' + c[0] + '">' + c[1] + '</button>';
-    }).join("");
-    $$("#filters [data-meal]").forEach(function (b) {
-      b.addEventListener("click", function () { state.meal = b.getAttribute("data-meal"); renderFilters(); renderRecipes(); });
-    });
-    $$("#filters [data-cuisine]").forEach(function (b) {
-      b.addEventListener("click", function () { state.cuisine = b.getAttribute("data-cuisine"); renderFilters(); renderRecipes(); });
+      var on = b.getAttribute("data-lang") === L();
+      b.setAttribute("aria-checked", on ? "true" : "false");
+      b.tabIndex = on ? 0 : -1;
     });
   }
 
-  function renderRecipes() {
-    var list = RECIPES.filter(function (r) {
-      return (state.cuisine === "all" || r.cuisine === state.cuisine) &&
-             (state.meal === "all" || r.meal === state.meal);
-    });
-    var order = { dinner: 0, breakfast: 1, lunch: 2, snack: 3 };
-    list.sort(function (a, b) { return order[a.meal] - order[b.meal] || a.name.localeCompare(b.name); });
-
-    if (!list.length) {
-      $("#recipeGrid").innerHTML = '<p class="muted">Nothing matches that combination — try another filter.</p>';
-      return;
+  /* ---------- today ---------- */
+  function relative(d) {
+    var n = M.daysBetween(today, d);
+    return n === 0 ? S("today") : n === 1 ? S("tomorrow") : n === -1 ? S("yesterday") : "";
+  }
+  function strip(date) {
+    var mon = M.monday(date), cells = "";
+    for (var i = 0; i < 7; i++) {
+      var d = M.addDays(mon, i), on = M.iso(d) === M.iso(date), isToday = M.iso(d) === M.iso(today);
+      cells += '<li><a href="#/day/' + M.iso(d) + '" class="' + (on ? "on" : "") + (isToday ? " now" : "") + '"' +
+        (on ? ' aria-current="date"' : "") + ' aria-label="' + esc(dateLong(d)) + '">' +
+        '<span>' + esc(weekdayShort(d)) + '</span><b>' + d.getDate() + '</b></a></li>';
     }
-    $("#recipeGrid").innerHTML = list.map(function (r) {
-      return '<button class="rcard" data-recipe="' + r.id + '">' +
-        '<span class="tag ' + r.cuisine + '">' + MEALNAME[r.meal][L()] + ' · ' + CUIS[r.cuisine][L()] + '</span>' +
-        '<h3>' + esc(r.name) + '</h3>' +
-        '<p class="desc">' + esc(r.short) + '</p>' +
-        '<span class="meta"><span><b>' + kcal(r.kcal * mult()) + '</b> kcal</span>' +
-        '<span><b>' + Math.round(r.protein * mult()) + '</b> g</span>' +
-        '<span>' + r.time + ' min</span></span>' +
-        '</button>';
+    return '<nav class="strip" aria-label="' + esc(S("pickDay")) + '">' +
+      '<a class="strip-nav" href="#/day/' + M.iso(M.addDays(date, -7)) + '" aria-label="' + esc(S("prevWeek")) + '">‹</a>' +
+      '<ol>' + cells + '</ol>' +
+      '<a class="strip-nav" href="#/day/' + M.iso(M.addDays(date, 7)) + '" aria-label="' + esc(S("nextWeek")) + '">›</a></nav>';
+  }
+
+  function renderToday() {
+    var date = state.route.date, info = M.dayAt(date), pd = info.plan;
+    var meals = M.meals(pd), dinner = meals[2].r;
+    var portions = M.dinnerPortions(date);
+    var rel = relative(date), isToday = M.iso(date) === M.iso(today);
+
+    var tape = "";
+    if (portions === 4) {
+      tape = '<p class="tape">' + S(portions / dinner.serves > 1 ? "double" : "makesFour") + '</p>';
+    }
+
+    var rows = meals.filter(function (m) { return m.slot !== "dinner"; }).map(function (m) {
+      var small = m.leftover ? S("leftoverFrom") : m.r.from ? S("fromPot") : m.r.time + " min";
+      return '<li><a class="line" href="' + recipeHref(m.r) + '">' +
+        '<span class="line-slot">' + S(m.slot) + '</span>' +
+        '<span class="line-what">' + esc(m.r.name) + '<small>' + small + '</small></span>' +
+        chips(m.r.kcal) + '</a></li>';
+    }).join("");
+    if (pd.extra) {
+      rows += '<li><div class="line line-extra">' +
+        '<span class="line-slot">' + S("topup") + '</span>' +
+        '<span class="line-what">' + esc(pd.extra.text) + '<small>' + S("hungry") + '</small></span>' +
+        chips(pd.extra.kcal) + '</div></li>';
+    }
+
+    var done = store.json("prep." + info.iso);
+    var prep = M.prep(date).map(function (h, i) {
+      var text = h.kind === "box" ? S("prepBox", { dish: h.r.name }) : h.r.ahead;
+      var small = h.kind === "box" ? "" : '<small>' + esc(S("prepFor", { dish: h.r.name })) + '</small>';
+      return '<li><label class="check"><input type="checkbox" data-prep="' + i + '"' + (done[i] ? " checked" : "") + '>' +
+        '<span class="check-text"' + (h.kind === "box" ? "" : ' lang="en"') + '>' + esc(text) + small + '</span></label></li>';
+    }).join("");
+    var wd = (date.getDay() + 6) % 7;
+    if (wd >= 5) {
+      var nextMon = M.addDays(M.monday(date), 7);
+      prep += '<li><a class="check check-link" href="#/shop/' + M.iso(nextMon) + '">' +
+        '<span class="check-text">' + S("prepShop", { week: M.weekOf(nextMon) }) + '</span></a></li>';
+    }
+
+    var tot = M.dayTotals(pd);
+    var totals = state.people.map(function (p, i) {
+      var k = tot.kcal * M.mult(p);
+      return '<div class="total total' + (i + 1) + '">' +
+        '<span class="total-name">' + esc(p.name) + '</span>' +
+        '<span class="total-num"><b>' + kcal(k) + '</b> kcal</span>' +
+        '<span class="total-sub">' + Math.round(tot.protein * M.mult(p)) + ' g ' + S("protein") + '</span>' +
+        '<span class="total-sub">' + S("target", { target: kcal(p.kcal) }) + '</span>' +
+        '</div>';
     }).join("");
 
-    $$("#recipeGrid .rcard").forEach(function (b) {
-      b.addEventListener("click", function () { openRecipe(b.getAttribute("data-recipe")); });
-    });
+    $("#view-today").innerHTML =
+      strip(date) +
+      '<p class="when">' + (rel ? '<b>' + rel + '</b> ' : "") + esc(cap(dateLong(date))) +
+        ' <span class="weektag">' + S("week") + ' ' + esc(info.week) + '</span>' +
+        (isToday ? "" : ' <a class="jump" href="#/">' + S("backToday") + '</a>') + '</p>' +
+      '<article class="ticket ' + dinner.cuisine + '">' +
+        '<p class="ticket-slot">' + (isToday ? S("tonight") : S("dinner")) + '</p>' +
+        '<h1 class="dish" lang="en"><a href="' + recipeHref(dinner, portions) + '">' + esc(dinner.name) + '</a></h1>' +
+        '<p class="dish-sub" lang="en">' + esc(dinner.short) + '</p>' +
+        '<ul class="facts"><li>' + dinner.time + ' min</li><li>' + CUIS[dinner.cuisine][L()] + '</li></ul>' +
+        tape +
+        split(dinner.kcal, dinner.protein) +
+        '<a class="btn btn-go" href="' + recipeHref(dinner, portions) + '">' + S("startCooking") + '</a>' +
+      '</article>' +
+      '<section class="block"><h2>' + S("restOfDay") + '</h2><ul class="lines">' + rows + '</ul></section>' +
+      (prep ? '<section class="block"><h2>' + S(isToday ? "beforeBed" : "nightBefore") + '</h2><ul class="checks">' + prep + '</ul></section>' : "") +
+      '<section class="block"><h2>' + S("dayTotal") + '</h2><div class="totals">' + totals + '</div>' +
+        '<p class="fine">' + S("estimates") + '</p></section>';
   }
 
-  /* ---------- recipe modal ---------- */
-  var lastFocus = null;
-  function openRecipe(id) {
-    var r = RID[id];
-    if (!r) return;
-    lastFocus = document.activeElement;
+  /* ---------- week ---------- */
+  function weekSeg(view, mon) {
+    var thisMon = M.monday(today), nextMon = M.addDays(thisMon, 7), cur = M.iso(mon);
+    function link(m, label) {
+      var on = M.iso(m) === cur;
+      return '<a href="#/' + view + '/' + M.iso(m) + '"' + (on ? ' aria-current="true"' : "") + '>' + label +
+        ' <span class="seg-sub">' + S("week") + ' ' + M.weekOf(m) + '</span></a>';
+    }
+    return '<nav class="seg" aria-label="' + esc(S("pickWeek")) + '">' + link(thisMon, S("thisWeek")) + link(nextMon, S("nextWeek2")) + '</nav>';
+  }
+  function range(mon) { return dateShort(mon) + " – " + dateShort(M.addDays(mon, 6)); }
 
-    var ings = r.ingredients.map(function (i) {
-      var a = ALT(i.t);
-      return '<li><span>' + esc(P(i.t)) + (a ? ' <span class="alt">' + esc(a) + '</span>' : '') + '</span>' +
-             '<span>' + esc(qtyText(qty(i))) + '</span></li>';
-    }).join("");
+  function renderWeek() {
+    var mon = state.route.monday || M.monday(today), wk = M.weekOf(mon);
+    var rows = "", fridge = "";
+    for (var i = 0; i < 7; i++) {
+      var d = M.addDays(mon, i), pd = M.dayAt(d).plan, ms = M.meals(pd), dn = ms[2].r;
+      var isToday = M.iso(d) === M.iso(today), portions = M.dinnerPortions(d);
+      var lunch = ms[1].leftover ? S("leftover").toLowerCase() : ms[1].r.name;
+      /* four portions is "cook double" for most dinners; the minestrone makes four anyway */
+      var more = portions !== 4 ? "" : S(portions / dn.serves > 1 ? "x2" : "x4");
+      rows += '<li><a class="wday' + (isToday ? " now" : "") + '" href="#/day/' + M.iso(d) + '">' +
+        '<span class="wday-date"><b>' + esc(cap(weekdayShort(d))) + '</b>' + d.getDate() + '</span>' +
+        '<span class="wday-what"><span class="wday-dinner" lang="en">' + esc(dn.name) + '</span>' +
+          '<small>' + esc(ms[0].r.name) + ' / ' + esc(lunch) + ' / ' + esc(ms[3].r.name) + '</small></span>' +
+        '<span class="wday-meta">' + dn.time + ' min' + (more ? '<em>' + more + '</em>' : "") + '</span>' +
+        '</a></li>';
 
-    var steps = r.steps.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join("");
+      fridge += '<tr><th scope="row">' + esc(cap(weekdayLong(d))) + '<small>' + d.getDate() + '.' + (d.getMonth() + 1) + '.</small></th>' +
+        '<td>' + esc(ms[0].r.name) + '</td>' +
+        '<td>' + (ms[1].leftover ? '<em>' + S("leftover") + '</em> ' : "") + esc(ms[1].r.name) + '</td>' +
+        '<td>' + esc(dn.name) + (more ? '<small>' + more + '</small>' : "") + '</td>' +
+        '<td>' + esc(ms[3].r.name) + (pd.extra ? '<small>' + S("topup") + ': ' + esc(pd.extra.text) + '</small>' : "") + '</td></tr>';
+    }
 
-    $("#modalBody").dataset.rid = r.id;
-    $("#modalBody").innerHTML =
-      '<p class="m-eyebrow">' + CUIS[r.cuisine][L()] + ' · ' + MEALNAME[r.meal][L()] + ' · ' + S("serves") + '</p>' +
-      '<h2 class="m-title" id="modalTitle">' + esc(r.name) + '</h2>' +
-      '<p class="m-sub">' + esc(r.short) + '</p>' +
-      '<div class="m-stats">' +
-        '<div class="m-stat"><b>' + kcal(r.kcal * mult()) + '</b>kcal / ' + S("portion") + '</div>' +
-        '<div class="m-stat"><b>' + Math.round(r.protein * mult()) + ' g</b>' + S("protein") + '</div>' +
-        '<div class="m-stat"><b>' + Math.round(r.fibre * mult()) + ' g</b>' + S("fibre") + '</div>' +
-        '<div class="m-stat"><b>' + r.time + ' min</b>' + S("time") + '</div>' +
-        '<div class="m-stat"><b>' + plateLabel() + '</b>' + S("setting") + '</div>' +
+    $("#view-week").innerHTML =
+      '<div class="screen-only">' +
+        '<header class="head"><h1>' + S("navWeek") + '</h1><p class="head-sub">' + esc(range(mon)) + '</p></header>' +
+        weekSeg("week", mon) +
+        '<p class="note" lang="en">' + esc(WEEK_NOTE[wk]) + '</p>' +
+        '<ol class="wdays">' + rows + '</ol>' +
+        '<div class="actions"><a class="btn" href="#/shop/' + M.iso(mon) + '">' + S("openList") + '</a>' +
+          '<button class="btn btn-quiet" data-print>' + S("printWeek") + '</button></div>' +
       '</div>' +
-      '<div class="m-cols">' +
-        '<div><h4>' + S("forTwo") + '</h4><ul class="ing">' + ings + '</ul></div>' +
-        '<div><h4>' + S("method") + '</h4><ol class="steps">' + steps + '</ol></div>' +
-      '</div>' +
-      (r.tip ? '<div class="m-tip"><b>' + S("note") + '</b>' + esc(r.tip) + '</div>' : "") +
-      (r.why ? '<div class="m-tip"><b>' + S("why") + '</b>' + esc(r.why) + '</div>' : "") +
-      '<p class="nutri">' + S("nutri") + plateLabel().toLowerCase() + '.</p>';
-
-    $("#modal").hidden = false;
-    document.body.style.overflow = "hidden";
-    setTimeout(function () { var c = $(".modal-close"); if (c) c.focus(); }, 30);
+      /* the same week as one table; only the print stylesheet shows it */
+      '<div class="fridge"><div class="fridge-head"><h2>Mesa Dos, ' + S("week") + ' ' + esc(wk) + '</h2><p>' + esc(range(mon)) + '</p></div>' +
+        '<table><thead><tr><th scope="col">' + S("fridgeDay") + '</th><th scope="col">' + S("breakfast") + '</th>' +
+        '<th scope="col">' + S("lunch") + '</th><th scope="col">' + S("dinner") + '</th><th scope="col">' + S("snack") + '</th></tr></thead>' +
+        '<tbody>' + fridge + '</tbody></table>' +
+        '<p class="fridge-foot">' + S("fridgeFoot") + '</p></div>';
   }
-
-  function closeModal() {
-    $("#modal").hidden = true;
-    document.body.style.overflow = "";
-    if (lastFocus && lastFocus.focus) lastFocus.focus();
-  }
-  $$("#modal [data-close],.modal-backdrop").forEach(function (el) { el.addEventListener("click", closeModal); });
-  document.addEventListener("keydown", function (e) { if (e.key === "Escape" && !$("#modal").hidden) closeModal(); });
 
   /* ---------- shopping ---------- */
-  function checksKey() { return LS + "checks." + state.week; }
-  function getChecks() {
-    try { return JSON.parse(localStorage.getItem(checksKey()) || "{}"); } catch (e) { return {}; }
+  function shopMonday() {
+    if (state.route.monday) return state.route.monday;
+    /* at the weekend the list that matters is next week's */
+    var mon = M.monday(today);
+    return (today.getDay() + 6) % 7 >= 5 ? M.addDays(mon, 7) : mon;
   }
-  function setChecks(o) { localStorage.setItem(checksKey(), JSON.stringify(o)); }
-
-  function renderShop() {
-    var weeks = SHOP[state.week];
-    var checks = getChecks();
-    var total = 0, done = 0, doneSum = 0, count = 0;
-
-    var html = weeks.map(function (aisle) {
-      var rows = aisle.items.map(function (i) {
-        total += i.p; count += 1;
-        if (checks[i.id]) { done += 1; doneSum += i.p; }
-        var a = ALT(i.n);
-        return '<li class="shop-item"><label><input type="checkbox" data-id="' + i.id + '"' + (checks[i.id] ? " checked" : "") + '>' +
-          '<span class="txt">' + esc(P(i.n)) + (a ? ' <span class="alt">' + esc(a) + '</span>' : '') +
-          ' <span class="muted">· ' + esc(qtyText(i.q)) + '</span>' +
-          (i.note ? '<small>' + esc(i.note) + '</small>' : "") + '</span></label>' +
-          '<span class="price">' + euro(i.p) + '</span></li>';
-      }).join("");
-      return '<section class="shop-aisle"><h3>' + esc(P(aisle.aisle)) + '</h3><ul class="shop-items">' + rows + '</ul></section>';
-    }).join("");
-
-    $("#shopList").innerHTML = html;
-
-    var perPerson = total / 2, perDay = total / 14;
-    $("#shopSide").innerHTML =
-      '<div class="sumcard">' +
-        '<h3>' + (L() === "fi" ? "Viikon " + state.week + " ostoskori" : "Week " + state.week + " basket") + '</h3>' +
-        '<div class="sumrow"><span>' + (L() === "fi" ? "Tuotteita" : "Items on the list") + '</span><b>' + count + '</b></div>' +
-        '<div class="sumrow"><span>' + (L() === "fi" ? "Valittu" : "Ticked off") + '</span><b>' + done + ' / ' + count + '</b></div>' +
-        '<div class="sumrow"><span>' + (L() === "fi" ? "Vielä ostettavaa" : "Still to buy") + '</span><b>' + euro(total - doneSum) + '</b></div>' +
-        '<div class="sumtotal"><span>' + (L() === "fi" ? "Arvio yhteensä" : "Estimated total") + '</span><b>' + euro(total) + '</b></div>' +
-        '<p>' + euro(perPerson) + (L() === "fi" ? " per henkilö viikossa, " : " per person for the week, ") + euro(perDay) +
-          (L() === "fi" ? " per henkilö päivässä. Vain tuoreet tuotteet — kuivakaappi alla." : " per person per day. Fresh items only — pantry stock is listed below and lasts weeks.") + '</p>' +
-      '</div>' +
-      '<div class="store-note">' +
-        '<b>Where to buy.</b><br>' + STORES.map(function (s) { return '<br><b>' + esc(s.name) + '</b> — ' + esc(s.note); }).join("") +
-      '</div>';
-
-    $$("#shopList input[type=checkbox]").forEach(function (cb) {
-      cb.addEventListener("change", function () {
-        var c = getChecks();
-        if (cb.checked) c[cb.getAttribute("data-id")] = 1; else delete c[cb.getAttribute("data-id")];
-        setChecks(c);
-        renderShop();
+  function shopState(mon) {
+    var list = M.shoppingList(mon, state.people);
+    var checks = store.json("checks." + M.iso(mon)), need = store.json("need." + M.iso(mon));
+    var total = 0, left = 0, count = 0, done = 0;
+    list.aisles.forEach(function (a) {
+      a.items.forEach(function (it) {
+        total += it.price; count += 1;
+        if (checks[it.name]) done += 1; else left += it.price;
       });
     });
-
-    $("#pantryList").innerHTML = PANTRY.map(function (p) {
-      var a = ALT(p.n);
-      return '<li><b>' + esc(P(p.n)) + '</b>' + (a ? ' <span class="alt">' + esc(a) + '</span>' : '') +
-        ' · ' + esc(qtyText(p.q)) + ' · ' + euro(p.p) + (p.note ? ' <span class="muted">(' + esc(p.note) + ')</span>' : "") + '</li>';
+    list.pantry.forEach(function (p) {
+      if (!need[p.name]) return;
+      total += p.item.p; count += 1;
+      if (checks[p.name]) done += 1; else left += p.item.p;
+    });
+    return { list: list, checks: checks, need: need, total: total, left: left, count: count, done: done };
+  }
+  function shopSummary(st) {
+    var pct = st.count ? Math.round(st.done / st.count * 100) : 0;
+    return '<p class="sum-main">' + (st.done === st.count && st.count ? S("allDone") :
+        S("leftToBuy", { n: st.count - st.done, eur: euros(st.left) })) + '</p>' +
+      '<span class="meter" role="img" aria-label="' + esc(S("ticked", { done: st.done, count: st.count })) + '"><i style="width:' + pct + '%"></i></span>' +
+      '<p class="sum-sub">' + S("basket", { eur: euros(st.total), each: euros(st.total / 14) }) + '</p>';
+  }
+  function renderShop() {
+    var mon = shopMonday(), st = shopState(mon);
+    var aisles = st.list.aisles.map(function (a) {
+      return '<section class="aisle"><h2>' + esc(P(a.aisle)) + '</h2><ul class="items">' + a.items.map(function (it) {
+        return itemRow(it.name, M.buyText(it, L()), it.price, st.checks[it.name], it.uses);
+      }).join("") + '</ul></section>';
     }).join("");
+
+    var wanted = st.list.pantry.filter(function (p) { return st.need[p.name]; });
+    if (wanted.length) {
+      aisles += '<section class="aisle"><h2>' + S("fromCupboard") + '</h2><ul class="items">' + wanted.map(function (p) {
+        return itemRow(p.name, P(p.item.q), p.item.p, st.checks[p.name], p.uses);
+      }).join("") + '</ul></section>';
+    }
+
+    var pantry = st.list.pantry.map(function (p) {
+      var amt = M.pantryText(p, L());
+      return '<li><label class="check"><input type="checkbox" data-need="' + esc(p.name) + '"' + (st.need[p.name] ? " checked" : "") + '>' +
+        '<span class="check-text">' + esc(P(p.name)) + altSpan(ALT(p.name)) +
+        '<small>' + (amt ? S("weekUses", { amount: amt }) : S("weekUsesSome")) + '</small></span></label></li>';
+    }).join("");
+
+    $("#view-shop").innerHTML =
+      '<header class="head"><h1>' + S("shopTitle") + '</h1><p class="head-sub">' + S("week") + ' ' + M.weekOf(mon) + ', ' + esc(range(mon)) + '</p></header>' +
+      '<div class="screen-only">' + weekSeg("shop", mon) + '</div>' +
+      '<div class="sum" id="shopSum">' + shopSummary(st) + '</div>' +
+      '<div class="actions screen-only">' +
+        '<button class="btn" data-share>' + S("share") + '</button>' +
+        '<button class="btn btn-quiet" data-print>' + S("print") + '</button>' +
+        '<button class="btn btn-quiet" data-clear>' + S("clearTicks") + '</button></div>' +
+      '<div id="shopList" data-monday="' + M.iso(mon) + '">' + aisles + '</div>' +
+      '<section class="block screen-only"><h2>' + S("cupboard") + '</h2><p class="note">' + S("cupboardNote") + '</p>' +
+        '<ul class="checks" id="pantryList" data-monday="' + M.iso(mon) + '">' + pantry + '</ul></section>' +
+      '<section class="block screen-only stores"><h2>' + S("stores") + '</h2><dl lang="en">' + STORES.map(function (s) {
+        return '<dt>' + esc(s.name) + '</dt><dd>' + esc(s.note) + '</dd>';
+      }).join("") + '</dl><p class="fine">' + S("priceNote") + '</p></section>';
+  }
+  function itemRow(name, qty, price, checked, uses) {
+    return '<li class="item"><label><input type="checkbox" data-id="' + esc(name) + '"' + (checked ? " checked" : "") + '>' +
+      '<span class="item-name">' + esc(P(name)) + altSpan(ALT(name)) +
+      (uses && uses.length ? '<small lang="en">' + esc(uses.slice(0, 2).join(", ")) + (uses.length > 2 ? " +" + (uses.length - 2) : "") + '</small>' : "") + '</span></label>' +
+      '<span class="item-qty">' + esc(qty) + '</span><span class="item-price">' + euro(price) + '</span></li>';
+  }
+  function shareText(mon) {
+    var st = shopState(mon), lines = [S("shopTitle") + " — " + S("week") + " " + M.weekOf(mon) + ", " + range(mon), ""];
+    st.list.aisles.forEach(function (a) {
+      var open = a.items.filter(function (it) { return !st.checks[it.name]; });
+      if (!open.length) return;
+      lines.push(P(a.aisle).toUpperCase());
+      open.forEach(function (it) { lines.push("☐ " + P(it.name) + (ALT(it.name) ? " (" + ALT(it.name) + ")" : "") + " — " + M.buyText(it, L())); });
+      lines.push("");
+    });
+    var wanted = st.list.pantry.filter(function (p) { return st.need[p.name] && !st.checks[p.name]; });
+    if (wanted.length) {
+      lines.push(S("fromCupboard").toUpperCase());
+      wanted.forEach(function (p) { lines.push("☐ " + P(p.name) + (ALT(p.name) ? " (" + ALT(p.name) + ")" : "")); });
+      lines.push("");
+    }
+    lines.push(S("basketShort", { eur: euros(st.left) }));
+    return lines.join("\n");
+  }
+  function toast(msg) {
+    var t = $("#toast");
+    t.textContent = msg;
+    t.hidden = false;
+    clearTimeout(toast.timer);
+    toast.timer = setTimeout(function () { t.hidden = true; }, 2600);
   }
 
-  $("#printBtn").addEventListener("click", function () { window.print(); });
-  $("#clearChecks").addEventListener("click", function () {
-    localStorage.removeItem(checksKey());
-    renderShop();
+  /* ---------- recipes ---------- */
+  var MEALS = ["all", "dinner", "breakfast", "lunch", "snack"];
+  var CUISINES = ["all", "peru", "asia", "europe"];
+  var MEAL_KEY = { all: "mealAll", dinner: "mealDinner", breakfast: "mealBreakfast", lunch: "mealLunch", snack: "mealSnack" };
+
+  function chip(attr, value, label, on) {
+    return '<button class="chip" ' + attr + '="' + value + '" aria-pressed="' + (on ? "true" : "false") + '">' + esc(label) + '</button>';
+  }
+  function renderRecipes() {
+    $("#view-recipes").innerHTML =
+      '<header class="head"><h1>' + S("navRecipes") + '</h1><p class="head-sub">' + S("recipesSub") + '</p></header>' +
+      '<label class="search"><span class="vh">' + S("search") + '</span>' +
+        '<input type="search" id="q" placeholder="' + esc(S("search")) + '" value="' + esc(state.q) + '" autocomplete="off"></label>' +
+      '<div class="filters" id="filters">' +
+        '<div class="chipset" role="group" aria-label="' + esc(S("filterMeal")) + '">' + MEALS.map(function (m) {
+          return chip("data-meal", m, S(MEAL_KEY[m]), state.meal === m);
+        }).join("") + '</div>' +
+        '<div class="chipset" role="group" aria-label="' + esc(S("filterCuisine")) + '">' + CUISINES.map(function (c) {
+          return chip("data-cuisine", c, c === "all" ? S("cuisineAll") : CUIS[c][L()], state.cuisine === c);
+        }).join("") + '</div></div>' +
+      '<p class="count" id="recipeCount" role="status"></p>' +
+      '<div id="recipeList"></div>';
+    renderRecipeList();
+  }
+  /* The list is separate from the controls, so typing in the search box and pressing a
+     chip never rebuild the thing that has focus. */
+  function renderRecipeList() {
+    var q = state.q.trim().toLowerCase();
+    var list = RECIPES.filter(function (r) {
+      if (state.cuisine !== "all" && r.cuisine !== state.cuisine) return false;
+      if (state.meal !== "all" && r.meal !== state.meal) return false;
+      if (!q) return true;
+      var hay = (r.name + " " + r.short + " " + r.ingredients.map(function (i) { return i.t + " " + M.enOf(i.t); }).join(" ")).toLowerCase();
+      return hay.indexOf(q) > -1;
+    });
+    $("#recipeCount").textContent = list.length + " " + S(list.length === 1 ? "recipeOne" : "recipeMany");
+    if (!list.length) {
+      $("#recipeList").innerHTML = '<p class="empty">' + S("noMatch") + '</p>';
+      return;
+    }
+    var html = "";
+    ["dinner", "breakfast", "lunch", "snack"].forEach(function (meal) {
+      var group = list.filter(function (r) { return r.meal === meal; });
+      if (!group.length) return;
+      group.sort(function (a, b) { return a.name.localeCompare(b.name); });
+      html += '<section class="rgroup"><h2>' + S(MEAL_KEY[meal]) + '</h2><ul class="rlist">' + group.map(function (r) {
+        return '<li><a class="rrow ' + r.cuisine + '" href="' + recipeHref(r) + '">' +
+          '<span class="rrow-what"><span class="rrow-name" lang="en">' + esc(r.name) + '</span>' +
+          '<small>' + CUIS[r.cuisine][L()] + ', ' + r.time + ' min</small></span>' +
+          chips(r.kcal) + '</a></li>';
+      }).join("") + '</ul></section>';
+    });
+    $("#recipeList").innerHTML = html;
+  }
+  function syncFilters() {
+    $$("#filters .chip").forEach(function (b) {
+      var on = b.hasAttribute("data-meal") ? b.getAttribute("data-meal") === state.meal
+                                           : b.getAttribute("data-cuisine") === state.cuisine;
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+  }
+
+  /* ---------- one recipe ---------- */
+  function cookFor(r) {
+    var solo = state.who === "both" ? null : state.people.filter(function (p) { return p.id === state.who; })[0];
+    var eaters = solo ? [solo] : state.people;
+    var canPlus = r.meal === "dinner";
+    var portions = eaters.length * (canPlus && state.plus ? 2 : 1);
+    return { eaters: eaters, solo: solo, canPlus: canPlus, portions: portions, batches: portions / r.serves, size: M.size(eaters) };
+  }
+  function renderRecipe() {
+    var r = M.RID[state.route.id], c = cookFor(r);
+    var ticks = cooked[r.id] || (cooked[r.id] = { ing: {}, step: {} });
+
+    var who = '<div class="seg seg-buttons" role="radiogroup" aria-label="' + esc(S("cookingFor")) + '">' +
+      [["both", S("both")]].concat(state.people.map(function (p) { return [p.id, p.name]; })).map(function (o) {
+        var on = state.who === o[0];
+        return '<button role="radio" aria-checked="' + (on ? "true" : "false") + '" tabindex="' + (on ? 0 : -1) + '" data-who="' + o[0] + '">' + esc(o[1]) + '</button>';
+      }).join("") + '</div>';
+    var plus = c.canPlus ? '<label class="switch"><input type="checkbox" data-plus' + (state.plus ? " checked" : "") + '><span>' + S("plusLunch") + '</span></label>' : "";
+
+    var makes = S(c.portions === 1 ? "makesOne" : "makesN", { n: M.fmtNumber(c.portions, L()) });
+    var asWritten = Math.abs(c.batches * c.size - 1) < 0.01;
+
+    var ings = r.ingredients.map(function (ing, i) {
+      return '<li><label class="check"><input type="checkbox" data-ing="' + i + '"' + (ticks.ing[i] ? " checked" : "") + '>' +
+        '<span class="check-text">' + esc(P(ing.t)) + altSpan(ALT(ing.t)) + '</span>' +
+        '<span class="ing-qty">' + esc(M.qtyText(ing, c.batches, c.size, L())) + '</span></label></li>';
+    }).join("");
+    var steps = r.steps.map(function (s, i) {
+      return '<li><label class="check"><input type="checkbox" data-step="' + i + '"' + (ticks.step[i] ? " checked" : "") + '>' +
+        '<span class="check-text">' + esc(s) + '</span></label></li>';
+    }).join("");
+
+    var plate = c.solo
+      ? '<p class="solo"><b>' + esc(c.solo.name) + '</b> ' + kcal(r.kcal * M.mult(c.solo)) + ' kcal, ' + Math.round(r.protein * M.mult(c.solo)) + ' g ' + S("protein") + '</p>'
+      : '<p class="split-label">' + S("splitLabel") + '</p>' + split(r.kcal, r.protein);
+
+    $("#view-recipe").innerHTML =
+      '<a class="back" href="#/recipes" data-back>‹ ' + S("back") + '</a>' +
+      '<header class="rhead ' + r.cuisine + '">' +
+        '<h1 class="dish" lang="en">' + esc(r.name) + '</h1>' +
+        '<p class="dish-sub" lang="en">' + esc(r.short) + '</p>' +
+        '<ul class="facts"><li>' + r.time + ' min</li><li>' + CUIS[r.cuisine][L()] + '</li><li>' + S(r.meal) + '</li><li>' + r.fibre + ' g ' + S("fibre") + '</li></ul>' +
+      '</header>' +
+      (r.ahead ? '<p class="tape" lang="en">' + esc(r.ahead) + '</p>' : "") +
+      '<section class="forwho"><h2>' + S("cookingFor") + '</h2>' + who + plus +
+        '<p class="makes">' + makes + (asWritten ? " " + S("asWritten") : "") + '</p>' + plate + '</section>' +
+      '<section class="block"><h2>' + S("ingredients") + '</h2><ul class="checks ing">' + ings + '</ul></section>' +
+      '<section class="block"><h2>' + S("method") + '</h2>' +
+        (asWritten ? "" : '<p class="note">' + S("methodNote", { n: r.serves }) + '</p>') +
+        '<ol class="checks steps" lang="en">' + steps + '</ol></section>' +
+      (r.tip ? '<aside class="tip"><h2>' + S("note") + '</h2><p lang="en">' + esc(r.tip) + '</p></aside>' : "") +
+      (r.why ? '<aside class="tip"><h2>' + S("why") + '</h2><p lang="en">' + esc(r.why) + '</p></aside>' : "") +
+      (wakeSupported() ? '<label class="switch wake"><input type="checkbox" data-wake' + (wake ? " checked" : "") + '><span>' + S("keepOn") + '</span></label>' : "") +
+      '<p class="fine">' + S("estimates") + '</p>';
+  }
+
+  /* keep the screen on while cooking, where the browser can */
+  var wake = null;
+  function wakeSupported() { return typeof navigator !== "undefined" && "wakeLock" in navigator; }
+  function requestWake() {
+    navigator.wakeLock.request("screen").then(function (w) {
+      wake = w;
+      /* the browser lets go of it when the page is hidden; ask again on the way back */
+      w.addEventListener("release", function () { wake = null; });
+    }, function () {
+      wake = null;
+      var box = $("[data-wake]"); if (box) box.checked = false;
+    });
+  }
+  function releaseWake() { if (wake && wake.release) wake.release(); wake = null; }
+
+  /* ---------- the two of you ---------- */
+  function derived(p) {
+    var i = state.people.indexOf(p), sh = M.shares(state.people)[i];
+    return S("personLine", {
+      pct: Math.round(sh * 100),
+      protein: Math.round(M.AVG.protein * M.mult(p)),
+      dinner: kcal(DINNER_AVG * M.mult(p))
+    });
+  }
+  function calcResult(pid) {
+    var c = store.json("calc")[pid] || {};
+    var b = { sex: c.sex === "f" || c.sex === "m" ? c.sex : (pid === "p2" ? "f" : "m"), kg: Number(c.kg), cm: Number(c.cm), age: Number(c.age), activity: c.activity || "low" };
+    if (!(b.kg >= 35 && b.kg <= 250 && b.cm >= 120 && b.cm <= 220 && b.age >= 18 && b.age <= 95)) {
+      return '<p class="note">' + S("calcEmpty") + '</p>';
+    }
+    var s = M.suggest(b);
+    return '<p class="calc-out">' + S(s.cut ? "calcResult" : "calcResultNoCut", { maint: kcal(s.maintenance), target: kcal(s.target) }) + '</p>' +
+      '<button class="btn" data-use="' + pid + '" data-kcal-value="' + s.target + '">' + S("calcUse", { target: kcal(s.target) }) + '</button>';
+  }
+  function renderUs() {
+    var calc = store.json("calc");
+    var cards = state.people.map(function (p, i) {
+      var c = calc[p.id] || {}, sex = c.sex === "f" || c.sex === "m" ? c.sex : (p.id === "p2" ? "f" : "m");
+      function field(key, label, min, max) {
+        return '<label class="field"><span>' + label + '</span><input type="number" inputmode="decimal" min="' + min + '" max="' + max + '" data-calc="' + p.id + '" data-key="' + key + '" value="' + esc(c[key] || "") + '"></label>';
+      }
+      return '<section class="person person' + (i + 1) + '">' +
+        '<label class="field field-name"><span>' + S("name") + '</span><input type="text" maxlength="16" data-name="' + p.id + '" value="' + esc(p.name) + '"></label>' +
+        '<div class="stepper"><button data-kcal="' + p.id + '" data-step="-50" aria-label="' + esc(S("less")) + '">−</button>' +
+          '<output id="kcal-' + p.id + '"><b>' + kcal(p.kcal) + '</b> ' + S("kcalDay") + '</output>' +
+          '<button data-kcal="' + p.id + '" data-step="50" aria-label="' + esc(S("more")) + '">+</button></div>' +
+        '<p class="person-line" id="line-' + p.id + '">' + derived(p) + '</p>' +
+        '<details class="calc"><summary>' + S("calcTitle") + '</summary>' +
+          '<div class="calc-grid">' +
+            '<label class="field"><span>' + S("calcSex") + '</span><select data-calc="' + p.id + '" data-key="sex">' +
+              '<option value="m"' + (sex === "m" ? " selected" : "") + '>' + S("calcMale") + '</option>' +
+              '<option value="f"' + (sex === "f" ? " selected" : "") + '>' + S("calcFemale") + '</option></select></label>' +
+            field("age", S("calcAge"), 18, 95) + field("cm", S("calcHeight"), 120, 220) + field("kg", S("calcWeight"), 35, 250) +
+            '<label class="field field-wide"><span>' + S("calcActivity") + '</span><select data-calc="' + p.id + '" data-key="activity">' +
+              ["low", "some", "high"].map(function (a) {
+                return '<option value="' + a + '"' + ((c.activity || "low") === a ? " selected" : "") + '>' + S("act_" + a) + '</option>';
+              }).join("") + '</select></label>' +
+          '</div><div id="calc-' + p.id + '">' + calcResult(p.id) + '</div>' +
+          '<p class="fine">' + S("calcNote") + '</p></details>' +
+        '</section>';
+    }).join("");
+
+    $("#usSettings").innerHTML =
+      '<header class="head"><h1>' + S("usTitle") + '</h1><p class="head-sub">' + S("usSub") + '</p></header>' +
+      '<div class="people">' + cards + '</div>' +
+      '<p class="note">' + S("usNote", { avg: kcal(M.AVG.kcal) }) + ' <button class="linkish" data-reset>' + S("usReset") + '</button></p>';
+  }
+  function refreshPerson(p) {
+    $("#kcal-" + p.id).innerHTML = '<b>' + kcal(p.kcal) + '</b> ' + S("kcalDay");
+    state.people.forEach(function (x) { $("#line-" + x.id).textContent = derived(x); });
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest ? e.target.closest("[data-back],[data-print],[data-share],[data-clear],[data-who],[data-kcal],[data-use],[data-reset],[data-lang],.chip") : null;
+    if (!t) return;
+    if (t.hasAttribute("data-back")) {
+      if (trail.length > 1) { e.preventDefault(); history.back(); }
+    } else if (t.hasAttribute("data-print")) {
+      window.print();
+    } else if (t.hasAttribute("data-share")) {
+      var text = shareText(shopMonday());
+      if (navigator.share) navigator.share({ title: "Mesa Dos", text: text }).catch(function () {});
+      else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(function () { toast(S("copied")); }, function () { toast(S("copyFailed")); });
+      else toast(S("copyFailed"));
+    } else if (t.hasAttribute("data-clear")) {
+      store.del("checks." + M.iso(shopMonday()));
+      renderShop();
+    } else if (t.hasAttribute("data-who")) {
+      state.who = t.getAttribute("data-who");
+      renderRecipe();
+      var again = $('[data-who="' + state.who + '"]'); if (again) again.focus();
+    } else if (t.hasAttribute("data-kcal") || t.hasAttribute("data-use")) {
+      var pid = t.getAttribute("data-kcal") || t.getAttribute("data-use");
+      var p = state.people.filter(function (x) { return x.id === pid; })[0];
+      p.kcal = t.hasAttribute("data-use") ? Number(t.getAttribute("data-kcal-value"))
+                                          : Math.max(1000, Math.min(3500, p.kcal + Number(t.getAttribute("data-step"))));
+      savePeople(); refreshPerson(p);
+      if (t.hasAttribute("data-use")) toast(S("saved"));
+    } else if (t.hasAttribute("data-reset")) {
+      store.del("people"); state.people = loadPeople(); renderUs();
+    } else if (t.hasAttribute("data-lang")) {
+      setLang(t.getAttribute("data-lang"));
+    } else if (t.classList.contains("chip")) {
+      if (t.hasAttribute("data-meal")) state.meal = t.getAttribute("data-meal");
+      else state.cuisine = t.getAttribute("data-cuisine");
+      syncFilters(); renderRecipeList();
+    }
   });
 
-  /* ---------- init ---------- */
-  document.documentElement.lang = state.lang;
-  showTab(location.hash.replace("#", "") || "plan");
-  syncSegs();
-  renderHero();
-  renderPlan();
-  renderFilters();
-  renderRecipes();
-  renderShop();
+  document.addEventListener("change", function (e) {
+    var t = e.target, a = function (n) { return t.getAttribute && t.getAttribute(n); };
+    if (!t || !t.getAttribute) return;
+    var o, key;
+    if (a("data-id") != null || a("data-need") != null) {
+      var mon = shopMonday();
+      key = (a("data-id") != null ? "checks." : "need.") + M.iso(mon);
+      o = store.json(key);
+      var id = a("data-id") != null ? a("data-id") : a("data-need");
+      if (t.checked) o[id] = 1; else delete o[id];
+      store.set(key, JSON.stringify(o));
+      /* a tick only changes the totals; rebuilding the list would drop keyboard focus.
+         Adding a cupboard item does change the list, so that one is redrawn. */
+      if (a("data-need") != null) {
+        renderShop();
+        var box = $$("#pantryList input").filter(function (x) { return x.getAttribute("data-need") === id; })[0];
+        if (box) box.focus();
+      } else {
+        $("#shopSum").innerHTML = shopSummary(shopState(mon));
+      }
+    } else if (a("data-prep") != null) {
+      key = "prep." + M.iso(state.route.date);
+      o = store.json(key);
+      if (t.checked) o[a("data-prep")] = 1; else delete o[a("data-prep")];
+      store.set(key, JSON.stringify(o));
+    } else if (a("data-ing") != null || a("data-step") != null) {
+      var ticks = cooked[state.route.id];
+      if (a("data-ing") != null) ticks.ing[a("data-ing")] = t.checked; else ticks.step[a("data-step")] = t.checked;
+    } else if (t.hasAttribute("data-plus")) {
+      state.plus = t.checked;
+      renderRecipe();
+      var sw = $("[data-plus]"); if (sw) sw.focus();
+    } else if (t.hasAttribute("data-wake")) {
+      if (t.checked) requestWake(); else releaseWake();
+    } else if (a("data-name") != null) {
+      var who = state.people.filter(function (x) { return x.id === a("data-name"); })[0];
+      who.name = t.value.trim().slice(0, 16) || PEOPLE.filter(function (x) { return x.id === who.id; })[0].name;
+      t.value = who.name;
+      savePeople();
+    } else if (a("data-calc") != null) {
+      o = store.json("calc");
+      (o[a("data-calc")] || (o[a("data-calc")] = {}))[a("data-key")] = t.value;
+      store.set("calc", JSON.stringify(o));
+      $("#calc-" + a("data-calc")).innerHTML = calcResult(a("data-calc"));
+    }
+  });
+
+  document.addEventListener("input", function (e) {
+    if (e.target && e.target.id === "q") { state.q = e.target.value; renderRecipeList(); }
+  });
+
+  /* radio groups: one tab stop, arrow keys move and select */
+  document.addEventListener("keydown", function (e) {
+    var step = { ArrowRight: 1, ArrowDown: 1, ArrowLeft: -1, ArrowUp: -1 }[e.key];
+    var b = e.target;
+    if (!step || !b || !b.getAttribute || b.getAttribute("role") !== "radio") return;
+    var group = b.closest('[role="radiogroup"]');
+    if (!group) return;
+    var btns = $$('[role="radio"]', group), i = btns.indexOf(b);
+    e.preventDefault();
+    var next = btns[(i + step + btns.length) % btns.length];
+    var sel = next.hasAttribute("data-lang") ? '[data-lang="' + next.getAttribute("data-lang") + '"]' : '[data-who="' + next.getAttribute("data-who") + '"]';
+    next.click();
+    var again = $(sel); if (again) again.focus();
+  });
+
+  function setLang(l) {
+    if (!SLOTS[l] || l === state.lang) return;
+    state.lang = l;
+    store.set("lang", l);
+    applyChrome();
+    render();
+  }
+
+  window.addEventListener("hashchange", function () { go(false); });
+  /* a phone left open overnight should not still say it is yesterday */
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState !== "visible") return;
+    if (wake === null && $("[data-wake]") && $("[data-wake]").checked) requestWake();
+    var t = now();
+    if (M.iso(t) !== M.iso(today)) { today = t; state.route = parseRoute(location.hash); render(); }
+  });
+
+  /* ---------- start ---------- */
+  prune(today);
+  applyChrome();
+  go(true);
+
+  /* ---------- offline ----------
+     sw.js is network-first, so an edit on disk is still live on the next request. Where
+     service workers are unavailable (some in-app browsers) this is skipped. */
+  if (typeof navigator !== "undefined" && "serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker.register("sw.js").catch(function () { /* offline support is optional */ });
+    });
+  }
 })();

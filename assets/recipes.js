@@ -1,8 +1,12 @@
-/* Mesa Dos — recipe data. Servings: 2. Nutrition is per serving, estimated. */
+/* Mesa Dos — recipe data.
+   serves: how many standard portions the ingredient list makes. Dinners are written for the
+   two of you (the minestrone makes four: two dinners, two lunches); breakfasts, snacks and
+   most lunches are written for one. kcal / protein / fibre are per portion, estimated.
+   ahead: something that has to happen the night before. from: a lunch built on a dinner. */
 const RECIPES = [
 /* ============================ DINNERS ============================ */
 {
-  id:"a1", meal:"dinner", cuisine:"peru", name:"Lomo saltado, light",
+  id:"a1", meal:"dinner", serves:2, cuisine:"peru", name:"Lomo saltado, light",
   short:"Peru's stir-fried beef and chips, with oven fries instead of the deep fryer.",
   time:35, kcal:520, protein:41, fibre:6,
   ingredients:[
@@ -30,7 +34,7 @@ const RECIPES = [
   why:"41 g protein and a big volume of vegetables for 520 kcal. Beef once a week is fine; it keeps the plan from feeling like chicken prison."
 },
 {
-  id:"a2", meal:"dinner", cuisine:"peru", name:"Pollo a la brasa with aji verde",
+  id:"a2", meal:"dinner", serves:2, cuisine:"peru", name:"Pollo a la brasa with aji verde",
   short:"Peru's rotisserie chicken, oven-roasted, with a yoghurt-green-chilli sauce.",
   time:45, kcal:470, protein:44, fibre:7,
   ingredients:[
@@ -59,7 +63,7 @@ const RECIPES = [
   why:"Chicken thighs stay juicy at high heat, so you eat less sauce to fix dryness. 44 g protein."
 },
 {
-  id:"a3", meal:"dinner", cuisine:"peru", name:"Ceviche with sweet potato and corn",
+  id:"a3", meal:"dinner", serves:2, ahead:"Move the frozen fish to the fridge tonight. It has to thaw slowly, never on the counter.", cuisine:"peru", name:"Ceviche with sweet potato and corn",
   short:"Lime-cured fish, red onion, chilli — Peru's national dish, no cooking required.",
   time:25, kcal:420, protein:33, fibre:7,
   ingredients:[
@@ -84,7 +88,7 @@ const RECIPES = [
   why:"Lean protein with almost no fat, and the sweet potato makes it a full meal instead of a starter."
 },
 {
-  id:"a4", meal:"dinner", cuisine:"asia", name:"Miso-glazed salmon with pak choi",
+  id:"a4", meal:"dinner", serves:2, cuisine:"asia", name:"Miso-glazed salmon with pak choi",
   short:"Sticky-sweet salmon under the grill, greens in the same pan, rice underneath.",
   time:25, kcal:540, protein:36, fibre:5,
   ingredients:[
@@ -111,7 +115,7 @@ const RECIPES = [
   why:"Fatty fish twice a week is the one thing most weight-loss plans get right. Rice portion is measured, not guessed."
 },
 {
-  id:"a5", meal:"dinner", cuisine:"asia", name:"Korean chicken lettuce wraps",
+  id:"a5", meal:"dinner", serves:2, cuisine:"asia", name:"Korean chicken lettuce wraps",
   short:"Gochujang chicken mince, crunchy vegetables, iceberg as the wrap.",
   time:20, kcal:430, protein:42, fibre:5,
   ingredients:[
@@ -139,7 +143,7 @@ const RECIPES = [
   why:"42 g protein for 430 kcal, and lettuce replaces the rice so you get volume instead of density. Add 1 dl rice each if you trained that day."
 },
 {
-  id:"a6", meal:"dinner", cuisine:"peru", name:"Baked cod with salsa criolla",
+  id:"a6", meal:"dinner", serves:2, ahead:"Move the frozen fish to the fridge tonight so it is thawed for dinner.", cuisine:"peru", name:"Baked cod with salsa criolla",
   short:"White fish, quinoa, and a sharp red-onion salsa that does all the flavouring.",
   time:30, kcal:430, protein:38, fibre:7,
   ingredients:[
@@ -165,7 +169,7 @@ const RECIPES = [
   why:"Very lean protein, and quinoa gives you fibre and a slow carbohydrate so you're not hunting the cupboard at 21:00."
 },
 {
-  id:"a7", meal:"dinner", cuisine:"europe", name:"Greek chicken traybake",
+  id:"a7", meal:"dinner", serves:2, cuisine:"europe", name:"Greek chicken traybake",
   short:"One tray, one oven, lemon-oregano chicken with bulgur and feta.",
   time:35, kcal:500, protein:46, fibre:8,
   ingredients:[
@@ -194,7 +198,7 @@ const RECIPES = [
 
 /* ---------------- week B ---------------- */
 {
-  id:"b1", meal:"dinner", cuisine:"peru", name:"Ají de gallina, lighter",
+  id:"b1", meal:"dinner", serves:2, cuisine:"peru", name:"Ají de gallina, lighter",
   short:"Peru's creamy shredded-chicken stew, built on quark instead of evaporated milk.",
   time:40, kcal:510, protein:40, fibre:5,
   ingredients:[
@@ -222,7 +226,7 @@ const RECIPES = [
   why:"Classic aji de gallina is cream, bread and oil. This version keeps the colour and silkiness at 510 kcal with 40 g protein."
 },
 {
-  id:"b2", meal:"dinner", cuisine:"peru", name:"Causa limeña with tuna",
+  id:"b2", meal:"dinner", serves:2, cuisine:"peru", name:"Causa limeña with tuna",
   short:"Cold lime-and-chilli potato cake layered with tuna and avocado.",
   time:35, kcal:450, protein:32, fibre:7,
   ingredients:[
@@ -247,7 +251,7 @@ const RECIPES = [
   why:"Potato gets a bad name, but boiled and cooled it's filling for 450 kcal, and the tuna-quark layer does the protein."
 },
 {
-  id:"b3", meal:"dinner", cuisine:"asia", name:"Asian pork meatballs with noodles",
+  id:"b3", meal:"dinner", serves:2, cuisine:"asia", name:"Asian pork meatballs with noodles",
   short:"Ginger-soy meatballs, rice noodles and a pile of crunchy vegetables.",
   time:30, kcal:540, protein:36, fibre:6,
   ingredients:[
@@ -275,7 +279,7 @@ const RECIPES = [
   why:"540 kcal is a big dinner by this plan's standards, which is exactly why it's here — one satisfying bowl beats three small snacks."
 },
 {
-  id:"b4", meal:"dinner", cuisine:"asia", name:"Green curry with chicken",
+  id:"b4", meal:"dinner", serves:2, cuisine:"asia", name:"Green curry with chicken",
   short:"Light coconut milk, curry paste, chicken and whatever vegetables are in the drawer.",
   time:30, kcal:520, protein:38, fibre:6,
   ingredients:[
@@ -301,7 +305,7 @@ const RECIPES = [
   why:"38 g protein and a genuinely satisfying bowl. Curry paste is a flavour shortcut that costs nothing in calories."
 },
 {
-  id:"b5", meal:"dinner", cuisine:"europe", name:"Minestrone with white beans",
+  id:"b5", meal:"dinner", serves:4, cuisine:"europe", name:"Minestrone with white beans",
   short:"A big pot of Italian vegetable soup — dinner tonight, lunch tomorrow.",
   time:35, kcal:380, protein:20, fibre:12,
   ingredients:[
@@ -330,7 +334,7 @@ const RECIPES = [
   why:"380 kcal for a bowl this big, 12 g fibre. The beans are what stop it being a sad vegetable broth."
 },
 {
-  id:"b6", meal:"dinner", cuisine:"europe", name:"Baked feta and tomato pasta",
+  id:"b6", meal:"dinner", serves:2, cuisine:"europe", name:"Baked feta and tomato pasta",
   short:"The viral one, done with wholewheat pasta and half the feta.",
   time:30, kcal:520, protein:24, fibre:9,
   ingredients:[
@@ -355,7 +359,7 @@ const RECIPES = [
   why:"24 g protein, 9 g fibre, and it's the meal that makes a diet feel like normal life. Add a boiled egg on the side if you need more protein."
 },
 {
-  id:"b7", meal:"dinner", cuisine:"asia", name:"Quick chicken pho",
+  id:"b7", meal:"dinner", serves:2, cuisine:"asia", name:"Quick chicken pho",
   short:"A 35-minute broth with star anise and charred ginger — Vietnam in a bowl.",
   time:35, kcal:430, protein:38, fibre:4,
   ingredients:[
@@ -386,7 +390,7 @@ const RECIPES = [
 
 /* ============================ BREAKFASTS ============================ */
 {
-  id:"bf1", meal:"breakfast", cuisine:"europe", name:"Quark bowl with berries",
+  id:"bf1", meal:"breakfast", serves:1, cuisine:"europe", name:"Quark bowl with berries",
   short:"The default breakfast: 30 seconds of assembly, 32 g protein.",
   time:3, kcal:380, protein:32, fibre:7,
   ingredients:[
@@ -405,7 +409,7 @@ const RECIPES = [
   why:"32 g protein first thing kills the 10:30 biscuit urge better than any cereal."
 },
 {
-  id:"bf2", meal:"breakfast", cuisine:"europe", name:"Rye bread, cottage cheese and egg",
+  id:"bf2", meal:"breakfast", serves:1, cuisine:"europe", name:"Rye bread, cottage cheese and egg",
   short:"Open sandwiches, Finnish-style, with enough protein to hold you.",
   time:8, kcal:340, protein:26, fibre:8,
   ingredients:[
@@ -425,7 +429,7 @@ const RECIPES = [
   why:"Real bread, real cheese, 26 g protein, and it takes eight minutes."
 },
 {
-  id:"bf3", meal:"breakfast", cuisine:"europe", name:"Spinach scramble",
+  id:"bf3", meal:"breakfast", serves:1, cuisine:"europe", name:"Spinach scramble",
   short:"Three eggs, a bag of spinach, one slice of rye.",
   time:8, kcal:380, protein:28, fibre:5,
   ingredients:[
@@ -445,7 +449,7 @@ const RECIPES = [
   why:"Eggs are the cheapest complete protein in Finland. 28 g for under a euro."
 },
 {
-  id:"bf4", meal:"breakfast", cuisine:"europe", name:"Overnight oats with skyr and apple",
+  id:"bf4", meal:"breakfast", serves:1, ahead:"Stir the oats, skyr and milk together tonight. They need a night in the fridge.", cuisine:"europe", name:"Overnight oats with skyr and apple",
   short:"Made the night before, eaten standing up, no cooking.",
   time:5, kcal:400, protein:28, fibre:8,
   ingredients:[
@@ -465,7 +469,7 @@ const RECIPES = [
   why:"28 g protein, 8 g fibre, and it's already made when you're late."
 },
 {
-  id:"bf5", meal:"breakfast", cuisine:"europe", name:"Skyr, banana and peanut butter",
+  id:"bf5", meal:"breakfast", serves:1, cuisine:"europe", name:"Skyr, banana and peanut butter",
   short:"Two minutes, no bowl skills required.",
   time:2, kcal:350, protein:30, fibre:4,
   ingredients:[
@@ -483,7 +487,7 @@ const RECIPES = [
 
 /* ============================ LUNCHES ============================ */
 {
-  id:"ln2", meal:"lunch", cuisine:"europe", name:"Tuna rye plate",
+  id:"ln2", meal:"lunch", serves:1, cuisine:"europe", name:"Tuna rye plate",
   short:"Tinned tuna, rye bread, cottage cheese, raw vegetables.",
   time:5, kcal:400, protein:32, fibre:9,
   ingredients:[
@@ -501,7 +505,7 @@ const RECIPES = [
   why:"A 5-minute lunch with 32 g protein that doesn't need a microwave."
 },
 {
-  id:"ln3", meal:"lunch", cuisine:"europe", name:"Soup, rye and cheese",
+  id:"ln3", meal:"lunch", serves:1, from:"b5", cuisine:"europe", name:"Soup, rye and cheese",
   short:"Yesterday's minestrone, one slice of rye, 20 g of cheese.",
   time:5, kcal:350, protein:18, fibre:10,
   ingredients:[
@@ -517,7 +521,7 @@ const RECIPES = [
   why:"350 kcal with 10 g fibre, and it leaves room for a real dinner."
 },
 {
-  id:"ln4", meal:"lunch", cuisine:"europe", name:"Chicken quinoa salad",
+  id:"ln4", meal:"lunch", serves:1, cuisine:"europe", name:"Chicken quinoa salad",
   short:"Cold chicken, quinoa, feta and a lemon dressing.",
   time:15, kcal:450, protein:38, fibre:7,
   ingredients:[
@@ -539,7 +543,7 @@ const RECIPES = [
   why:"38 g protein, and cold quinoa has a lower glycaemic response than hot — a small bonus for a filling lunch."
 },
 {
-  id:"ln5", meal:"lunch", cuisine:"europe", name:"Lentil and feta salad",
+  id:"ln5", meal:"lunch", serves:2, cuisine:"europe", name:"Lentil and feta salad",
   short:"The vegetarian lunch that actually keeps you full.",
   time:20, kcal:420, protein:22, fibre:14,
   ingredients:[
@@ -562,7 +566,7 @@ const RECIPES = [
   why:"14 g fibre — the highest in the plan. Fibre is the most underrated weight-loss tool there is."
 },
 {
-  id:"ln6", meal:"lunch", cuisine:"europe", name:"Turkey and hummus wrap",
+  id:"ln6", meal:"lunch", serves:1, cuisine:"europe", name:"Turkey and hummus wrap",
   short:"Five minutes, hand-held, no plate needed.",
   time:5, kcal:400, protein:28, fibre:8,
   ingredients:[
@@ -584,27 +588,27 @@ const RECIPES = [
 },
 
 /* ============================ SNACKS ============================ */
-{id:"sn1", meal:"snack", cuisine:"europe", name:"Quark and berries", short:"150 g quark, a handful of frozen berries.", time:2, kcal:150, protein:15, fibre:3,
+{id:"sn1", meal:"snack", serves:1, cuisine:"europe", name:"Quark and berries", short:"150 g quark, a handful of frozen berries.", time:2, kcal:150, protein:15, fibre:3,
  ingredients:[{t:"Maitorahka", n:150, u:"g", s:1},{t:"Pakastemarjat", n:60, u:"g", s:1}],
  steps:["Combine. Eat."],
  tip:"The cheapest 15 g protein in the house.", why:"Keeps the afternoon from turning into a bread expedition."},
-{id:"sn2", meal:"snack", cuisine:"europe", name:"Apple and peanut butter", short:"One apple, one level tablespoon.", time:2, kcal:200, protein:6, fibre:5,
+{id:"sn2", meal:"snack", serves:1, cuisine:"europe", name:"Apple and peanut butter", short:"One apple, one level tablespoon.", time:2, kcal:200, protein:6, fibre:5,
  ingredients:[{t:"Omena", n:1, u:"kpl"},{t:"Maapähkinävoi", n:1, u:"rkl"}],
  steps:["Slice the apple, dip."],
  tip:"Peanut butter is a calorie-dense food pretending to be a health food. One spoon, weighed.", why:"Sweet, crunchy, and done in two minutes."},
-{id:"sn3", meal:"snack", cuisine:"europe", name:"Two boiled eggs", short:"Boil a batch on Sunday.", time:9, kcal:150, protein:13, fibre:0,
+{id:"sn3", meal:"snack", serves:1, ahead:"Boil the eggs tonight, or a batch of six on Sunday. They keep a week in the fridge.", cuisine:"europe", name:"Two boiled eggs", short:"Boil a batch on Sunday.", time:9, kcal:150, protein:13, fibre:0,
  ingredients:[{t:"Kananmuna", n:2, u:"kpl"},{t:"Suola, mustapippuri", n:"", u:"maun mukaan"}],
  steps:["8 minutes from boiling, cold water, peel."],
  tip:"Boil six on Sunday; they keep a week in the fridge.", why:"Zero-decision protein."},
-{id:"sn4", meal:"snack", cuisine:"asia", name:"Edamame with sea salt", short:"Frozen pods, four minutes, salt.", time:5, kcal:120, protein:11, fibre:5,
+{id:"sn4", meal:"snack", serves:1, cuisine:"asia", name:"Edamame with sea salt", short:"Frozen pods, four minutes, salt.", time:5, kcal:120, protein:11, fibre:5,
  ingredients:[{t:"Edamame, pakaste", n:100, u:"g", s:1},{t:"Merisuola", n:"", u:"ripaus"}],
  steps:["Boil or steam from frozen 4 min. Salt. Eat from the pod."],
  tip:"In the freezer aisle of any Prisma. Keep a bag.", why:"11 g protein and something to do with your hands."},
-{id:"sn5", meal:"snack", cuisine:"europe", name:"Carrots and hummus", short:"Crunch, dip, repeat.", time:2, kcal:150, protein:5, fibre:5,
+{id:"sn5", meal:"snack", serves:1, cuisine:"europe", name:"Carrots and hummus", short:"Crunch, dip, repeat.", time:2, kcal:150, protein:5, fibre:5,
  ingredients:[{t:"Porkkana", n:2, u:"kpl"},{t:"Hummus", n:2, u:"rkl"}],
  steps:["Cut carrots into sticks. Dip."],
  tip:"Cut them when you get home from the shop, not when you're hungry.", why:"Volume and fibre for very little."},
-{id:"sn6", meal:"snack", cuisine:"europe", name:"Skyr with cinnamon", short:"Cold, thick, slightly dessert-like.", time:2, kcal:120, protein:18, fibre:0,
+{id:"sn6", meal:"snack", serves:1, cuisine:"europe", name:"Skyr with cinnamon", short:"Cold, thick, slightly dessert-like.", time:2, kcal:120, protein:18, fibre:0,
  ingredients:[{t:"Skyr", n:150, u:"g", s:1},{t:"Kaneli", n:"1", u:"tl"},{t:"Makeutusaine or ½ tl hunajaa", n:"", u:"halutessa"}],
  steps:["Stir cinnamon through the skyr."],
  tip:"Whip it with a fork for 30 s and it turns mousse-like.", why:"18 g protein for 120 kcal — the best ratio in the plan."}
