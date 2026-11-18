@@ -26,10 +26,26 @@
     try {
       var cutoff = M.iso(M.addDays(today, -21));
       for (var i = localStorage.length - 1; i >= 0; i--) {
-        var m = /^mesa2\.(?:checks|need|prep)\.(\d{4}-\d\d-\d\d)$/.exec(localStorage.key(i) || "");
+        var m = /^mesa2\.(?:checks|need|prep|swap)\.(\d{4}-\d\d-\d\d)$/.exec(localStorage.key(i) || "");
         if (m && m[1] < cutoff) localStorage.removeItem(localStorage.key(i));
       }
     } catch (e) { /* blocked */ }
+  }
+
+  /* A rerolled week is remembered as seven digits per Monday (see core.js). They are read
+     once at the start; after that core.js holds them and this only writes changes down. */
+  function loadSwaps() {
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var m = /^mesa2\.swap\.(\d{4}-\d\d-\d\d)$/.exec(localStorage.key(i) || "");
+        var d = m && M.parseISO(m[1]);
+        if (d) M.setSwaps(d, localStorage.getItem(localStorage.key(i)));
+      }
+    } catch (e) { /* blocked */ }
+  }
+  function saveSwaps(mon) {
+    var code = M.getSwaps(mon);
+    if (code === "0000000") store.del("swap." + M.iso(mon)); else store.set("swap." + M.iso(mon), code);
   }
 
   /* ---------- state ---------- */
@@ -136,7 +152,7 @@
     if (view === "today") return { view: "today", date: today };
     if (view === "week" || view === "shop") {
       var mon = M.parseISO(parts[1]);
-      return { view: view, monday: mon ? M.monday(mon) : null };
+      return { view: view, monday: mon ? M.monday(mon) : null, code: mon && /^\d{7}$/.test(parts[2] || "") ? parts[2] : null };
     }
     if (view === "recipe") {
       if (!M.RID[parts[1]]) return { view: "recipes" };
@@ -153,6 +169,14 @@
   function go(first) {
     var prev = state.route;
     var next = parseRoute(location.hash);
+    /* a link from the other phone: take its week, then drop the code from the address */
+    if (next.code) {
+      M.setSwaps(next.monday, next.code);
+      saveSwaps(next.monday);
+      toast(S("weekApplied"));
+      next.code = null;
+      try { history.replaceState(null, "", "#/" + next.view + "/" + M.iso(next.monday)); } catch (e) { /* fine */ }
+    }
     var key = routeKey(next), back = false;
     if (!first) {
       scrolls[routeKey(prev)] = window.pageYOffset || 0;
@@ -241,10 +265,14 @@
 
     var done = store.json("prep." + info.iso);
     var prep = M.prep(date).map(function (h, i) {
-      var text = h.kind === "box" ? S("prepBox", { dish: h.r.name }) : h.r.ahead;
-      var small = h.kind === "box" ? "" : '<small>' + esc(S("prepFor", { dish: h.r.name })) + '</small>';
+      var text = h.kind === "box" ? S("prepBox", { dish: h.r.name }) : h.kind === "early" ? h.r.early : h.r.ahead;
+      var small = h.kind === "box" ? "" : '<small>' + esc(S(h.kind === "early" ? "prepEarly" : "prepFor", { dish: h.r.name })) + '</small>';
       return '<li><label class="check"><input type="checkbox" data-prep="' + i + '"' + (done[i] ? " checked" : "") + '>' +
         '<span class="check-text"' + (h.kind === "box" ? "" : ' lang="en"') + '>' + esc(text) + small + '</span></label></li>';
+    }).join("");
+    prep += M.batchTasks(date, state.people).map(function (t, i) {
+      return '<li><label class="check"><input type="checkbox" data-prep="b' + i + '"' + (done["b" + i] ? " checked" : "") + '>' +
+        '<span class="check-text">' + batchLine(t) + '</span></label></li>';
     }).join("");
     var wd = (date.getDay() + 6) % 7;
     if (wd >= 5) {
@@ -277,11 +305,24 @@
         tape +
         split(dinner.kcal, dinner.protein) +
         '<a class="btn btn-go" href="' + recipeHref(dinner, portions) + '">' + S("startCooking") + '</a>' +
-      '</article>' +
+        '<button class="swap" data-reroll="' + info.index + '" data-monday="' + M.iso(M.monday(date)) + '">' + S("reroll") + '</button>' +
+      '</article>' + swapNotice(M.monday(date)) +
       '<section class="block"><h2>' + S("restOfDay") + '</h2><ul class="lines">' + rows + '</ul></section>' +
       (prep ? '<section class="block"><h2>' + S(isToday ? "beforeBed" : "nightBefore") + '</h2><ul class="checks">' + prep + '</ul></section>' : "") +
       '<section class="block"><h2>' + S("dayTotal") + '</h2><div class="totals">' + totals + '</div>' +
         '<p class="fine">' + S("estimates") + '</p></section>';
+  }
+
+  /* "Boil 8 eggs. In their shells they keep 5 days. For Tue and Thu." */
+  function batchLine(t) {
+    return esc(S("batch_" + t.key, { n: M.amountText(t.amount, t.unit, L()), keeps: t.keeps })) +
+      '<small>' + esc(S("batchFor", { days: t.dates.map(function (d) { return cap(weekdayShort(d)); }).join(", ") })) + '</small>';
+  }
+  /* shown wherever a week differs from what was dealt */
+  function swapNotice(mon) {
+    if (M.getSwaps(mon) === "0000000") return "";
+    return '<p class="swapped">' + S("swapped") + ' <button class="linkish" data-send="' + M.iso(mon) + '">' + S("sendWeek") + '</button>' +
+      ' <button class="linkish" data-unswap="' + M.iso(mon) + '">' + S("resetWeek") + '</button></p>';
   }
 
   /* ---------- week ---------- */
@@ -305,12 +346,13 @@
       var lunch = ms[1].leftover ? S("leftover").toLowerCase() : ms[1].r.name;
       /* four portions is "cook double" for most dinners; the minestrone makes four anyway */
       var more = portions !== 4 ? "" : S(portions / dn.serves > 1 ? "x2" : "x4");
-      rows += '<li><a class="wday' + (isToday ? " now" : "") + '" href="#/day/' + M.iso(d) + '">' +
+      rows += '<li class="wrow"><a class="wday' + (isToday ? " now" : "") + '" href="#/day/' + M.iso(d) + '">' +
         '<span class="wday-date"><b>' + esc(cap(weekdayShort(d))) + '</b>' + d.getDate() + '</span>' +
         '<span class="wday-what"><span class="wday-dinner" lang="en">' + esc(dn.name) + '</span>' +
           '<small>' + esc(ms[0].r.name) + ' / ' + esc(lunch) + ' / ' + esc(ms[3].r.name) + '</small></span>' +
         '<span class="wday-meta">' + dn.time + ' min' + (more ? '<em>' + more + '</em>' : "") + '</span>' +
-        '</a></li>';
+        '</a><button class="reroll" data-reroll="' + i + '" data-monday="' + M.iso(mon) + '" aria-label="' + esc(S("rerollDay", { day: weekdayLong(d) })) + '" title="' + esc(S("reroll")) + '">' +
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3M19.5 4v4.5H15"/></svg></button></li>';
 
       fridge += '<tr><th scope="row">' + esc(cap(weekdayLong(d))) + '<small>' + d.getDate() + '.' + (d.getMonth() + 1) + '.</small></th>' +
         '<td>' + esc(ms[0].r.name) + '</td>' +
@@ -324,9 +366,12 @@
         '<header class="head"><h1>' + S("navWeek") + '</h1><p class="head-sub">' + esc(range(mon)) + '</p></header>' +
         weekSeg("week", mon) +
         '<p class="note">' + S("weekVisits", { list: M.weekCuisines(mon).map(function (c) { return CUIS[c][L()]; }).join(", ") }) + '</p>' +
+        swapNotice(mon) +
         '<ol class="wdays">' + rows + '</ol>' +
+        ahead(mon) +
         '<div class="actions"><a class="btn" href="#/shop/' + M.iso(mon) + '">' + S("openList") + '</a>' +
-          '<button class="btn btn-quiet" data-print>' + S("printWeek") + '</button></div>' +
+          '<button class="btn btn-quiet" data-print>' + S("printWeek") + '</button>' +
+          '<button class="btn btn-quiet" data-reroll="all" data-monday="' + M.iso(mon) + '">' + S("rerollWeek") + '</button></div>' +
         '<p class="pager"><a href="#/week/' + M.iso(M.addDays(mon, -7)) + '">‹ ' + S("week") + ' ' + M.weekOf(M.addDays(mon, -7)) + '</a>' +
           '<a href="#/week/' + M.iso(M.addDays(mon, 7)) + '">' + S("week") + ' ' + M.weekOf(M.addDays(mon, 7)) + ' ›</a></p>' +
       '</div>' +
@@ -336,6 +381,16 @@
         '<th scope="col">' + S("lunch") + '</th><th scope="col">' + S("dinner") + '</th><th scope="col">' + S("snack") + '</th></tr></thead>' +
         '<tbody>' + fridge + '</tbody></table>' +
         '<p class="fridge-foot">' + S("fridgeFoot") + '</p></div>';
+  }
+
+  /* the week's cook-ahead evenings */
+  function ahead(mon) {
+    var sessions = M.prepSessions(mon, state.people);
+    if (!sessions.length) return "";
+    return '<section class="block"><h2>' + S("getAhead") + '</h2><p class="note">' + S("getAheadNote") + '</p>' + sessions.map(function (s) {
+      return '<h3 class="session"><a href="#/day/' + M.iso(s.date) + '">' + esc(S("evening", { day: cap(weekdayLong(s.date)) })) + '</a></h3>' +
+        '<ul class="plain">' + s.tasks.map(function (t) { return '<li>' + batchLine(t) + '</li>'; }).join("") + '</ul>';
+    }).join("") + '</section>';
   }
 
   /* ---------- shopping ---------- */
@@ -393,6 +448,7 @@
 
     $("#view-shop").innerHTML =
       '<header class="head"><h1>' + S("shopTitle") + '</h1><p class="head-sub">' + S("week") + ' ' + M.weekOf(mon) + ', ' + esc(range(mon)) + '</p></header>' +
+      '<div class="screen-only">' + swapNotice(mon) + '</div>' +
       '<div class="screen-only">' + weekSeg("shop", mon) + '</div>' +
       '<div class="sum" id="shopSum">' + shopSummary(st) + '</div>' +
       '<div class="actions screen-only">' +
@@ -630,8 +686,27 @@
 
   /* ---------- events ---------- */
   document.addEventListener("click", function (e) {
-    var t = e.target.closest ? e.target.closest("[data-back],[data-print],[data-share],[data-clear],[data-who],[data-kcal],[data-use],[data-reset],[data-lang],.chip") : null;
+    var t = e.target.closest ? e.target.closest("[data-back],[data-print],[data-share],[data-clear],[data-who],[data-kcal],[data-use],[data-reset],[data-lang],[data-reroll],[data-unswap],[data-send],.chip") : null;
     if (!t) return;
+    if (t.hasAttribute("data-reroll") || t.hasAttribute("data-unswap")) {
+      var wk = M.parseISO(t.getAttribute("data-monday") || t.getAttribute("data-unswap")), which = t.getAttribute("data-reroll");
+      if (t.hasAttribute("data-unswap")) M.setSwaps(wk, "0000000");
+      else M.reroll(wk, which === "all" ? null : Number(which));
+      saveSwaps(wk);
+      render();
+      /* the button was redrawn: put focus back on its replacement */
+      var same = which == null ? null : $$('[data-reroll="' + which + '"]').filter(function (b) { return b.offsetParent !== null; })[0];
+      if (same) same.focus(); else if ($("#main").focus) $("#main").focus({ preventScroll: true });
+      return;
+    }
+    if (t.hasAttribute("data-send")) {
+      var m = M.parseISO(t.getAttribute("data-send"));
+      var url = location.href.split("#")[0] + "#/week/" + M.iso(m) + "/" + M.getSwaps(m);
+      if (navigator.share) navigator.share({ title: "Mesa Dos", text: S("sendWeekText", { week: M.weekOf(m) }), url: url }).catch(function () {});
+      else if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(function () { toast(S("linkCopied")); }, function () { toast(S("copyFailed")); });
+      else toast(S("copyFailed"));
+      return;
+    }
     if (t.hasAttribute("data-back")) {
       if (trail.length > 1) { e.preventDefault(); history.back(); }
     } else if (t.hasAttribute("data-print")) {
@@ -751,6 +826,7 @@
 
   /* ---------- start ---------- */
   prune(today);
+  loadSwaps();
   applyChrome();
   go(true);
 

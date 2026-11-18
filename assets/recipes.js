@@ -2,7 +2,9 @@
    serves: how many standard portions the ingredient list makes. Dinners are written for the
    two of you (the minestrone makes four: two dinners, two lunches); breakfasts, snacks and
    most lunches are written for one. kcal / protein / fibre are per portion, estimated.
-   ahead: something that has to happen the night before. from: a lunch built on a dinner.
+   ahead: something that has to happen the night before. early: something that can, to make
+   tomorrow shorter. from: a lunch built on a dinner. An ingredient with b:"eggs" is part of a
+   batch that can be cooked days ahead (see BATCHES in plan.js); b:0 keeps it out of one.
    Dinners also carry main (what the protein is — the weekly plan spreads these out) and
    keeps:1 when the dish is good as the next day's lunch. */
 const RECIPES = [
@@ -36,7 +38,7 @@ const RECIPES = [
   why:"41 g protein and a big volume of vegetables for 520 kcal. Beef once a week is fine; it keeps the plan from feeling like chicken prison."
 },
 {
-  id:"a2", meal:"dinner", main:"chicken", serves:2, cuisine:"peru", name:"Pollo a la brasa with aji verde",
+  id:"a2", meal:"dinner", early:"Rub the chicken with its marinade tonight and leave it covered in the fridge. Ten minutes is fine; a night is better.", main:"chicken", serves:2, cuisine:"peru", name:"Pollo a la brasa with aji verde",
   short:"Peru's rotisserie chicken, oven-roasted, with a yoghurt-green-chilli sauce.",
   time:45, kcal:470, protein:44, fibre:7,
   ingredients:[
@@ -228,7 +230,7 @@ const RECIPES = [
   why:"Classic aji de gallina is cream, bread and oil. This version keeps the colour and silkiness at 510 kcal with 40 g protein."
 },
 {
-  id:"b2", meal:"dinner", main:"fish", serves:2, cuisine:"peru", name:"Causa limeña with tuna",
+  id:"b2", meal:"dinner", early:"Boil and mash the potato tonight. The causa has to be cold to hold its shape anyway.", main:"fish", serves:2, cuisine:"peru", name:"Causa limeña with tuna",
   short:"Cold lime-and-chilli potato cake layered with tuna and avocado.",
   time:35, kcal:450, protein:32, fibre:7,
   ingredients:[
@@ -253,7 +255,7 @@ const RECIPES = [
   why:"Potato gets a bad name, but boiled and cooled it's filling for 450 kcal, and the tuna-quark layer does the protein."
 },
 {
-  id:"b3", meal:"dinner", main:"pork", keeps:1, serves:2, cuisine:"asia", name:"Asian pork meatballs with noodles",
+  id:"b3", meal:"dinner", early:"Roll the meatballs tonight. Tomorrow starts at the browning.", main:"pork", keeps:1, serves:2, cuisine:"asia", name:"Asian pork meatballs with noodles",
   short:"Ginger-soy meatballs, rice noodles and a pile of crunchy vegetables.",
   time:30, kcal:540, protein:36, fibre:6,
   ingredients:[
@@ -479,7 +481,7 @@ const RECIPES = [
   why:"45 g of lean protein, and the slaw is most of the volume."
 },
 {
-  id:"i1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"india", name:"Chicken tikka masala, lighter",
+  id:"i1", meal:"dinner", early:"Mix the chicken with its yoghurt and spices tonight. It can sit in the fridge until tomorrow and only improves.", main:"chicken", keeps:1, serves:2, cuisine:"india", name:"Chicken tikka masala, lighter",
   short:"Yoghurt-marinated chicken in a spiced tomato sauce, with rice and spinach.",
   time:40, kcal:540, protein:52, fibre:6,
   ingredients:[
@@ -563,7 +565,7 @@ const RECIPES = [
   why:"37 g protein without meat, mostly from the tofu and edamame."
 },
 {
-  id:"e1", meal:"dinner", main:"chicken", keeps:1, serves:2, cuisine:"mideast", name:"Chicken shawarma bowl",
+  id:"e1", meal:"dinner", early:"Slice and spice the chicken tonight. Tomorrow it goes straight into the pan.", main:"chicken", keeps:1, serves:2, cuisine:"mideast", name:"Chicken shawarma bowl",
   short:"Warm-spiced chicken, bulgur, chopped salad and a garlic yoghurt.",
   time:35, kcal:490, protein:52, fibre:8,
   ingredients:[
@@ -620,7 +622,7 @@ const RECIPES = [
   why:"The meatless dinner that does not feel like one, done in a single pan."
 },
 {
-  id:"e3", meal:"dinner", main:"beef", keeps:1, serves:2, cuisine:"mideast", name:"Beef kofta with tzatziki",
+  id:"e3", meal:"dinner", early:"Shape the kofta and stir the tzatziki tonight. Both are happy in the fridge overnight.", main:"beef", keeps:1, serves:2, cuisine:"mideast", name:"Beef kofta with tzatziki",
   short:"Cumin-and-mint meatballs, bulgur and a cold cucumber yoghurt.",
   time:35, kcal:540, protein:39, fibre:8,
   ingredients:[
@@ -700,7 +702,7 @@ const RECIPES = [
   why:"The cream in the classic is about 200 kcal a bowl. Milk and a floury potato give nearly the same body."
 },
 {
-  id:"n2", meal:"dinner", main:"beef", keeps:1, serves:2, cuisine:"nordic", name:"Oven meatballs with root mash",
+  id:"n2", meal:"dinner", early:"Roll the meatballs tonight and keep them covered on the tray. Tomorrow they only need the oven.", main:"beef", keeps:1, serves:2, cuisine:"nordic", name:"Oven meatballs with root mash",
   short:"Lihapullat from the oven, potato-and-carrot mash, lingonberries.",
   time:40, kcal:560, protein:42, fibre:8,
   ingredients:[
@@ -760,7 +762,7 @@ const RECIPES = [
   time:35, kcal:510, protein:39, fibre:7,
   ingredients:[
     {t:"Katkaravut, pakaste (kuoritut)", n:300, u:"g", s:1},
-    {t:"Täysjyväriisi", n:1.5, u:"dl"},
+    {t:"Täysjyväriisi", n:1.5, u:"dl", b:0},
     {t:"Paprika", n:1, u:"kpl"},
     {t:"Sipuli", n:1, u:"kpl"},
     {t:"Valkosipuli", n:3, u:"kynttä"},
@@ -1043,7 +1045,7 @@ const RECIPES = [
  steps:["Slice the apple, dip."],
  tip:"Peanut butter is a calorie-dense food pretending to be a health food. One spoon, weighed.", why:"Sweet, crunchy, and done in two minutes."},
 {id:"sn3", meal:"snack", serves:1, ahead:"Boil the eggs tonight, or a batch of six on Sunday. They keep a week in the fridge.", cuisine:"europe", name:"Two boiled eggs", short:"Boil a batch on Sunday.", time:9, kcal:150, protein:13, fibre:0,
- ingredients:[{t:"Kananmuna", n:2, u:"kpl"},{t:"Suola, mustapippuri", n:"", u:"maun mukaan"}],
+ ingredients:[{t:"Kananmuna", n:2, u:"kpl", b:"eggs"},{t:"Suola, mustapippuri", n:"", u:"maun mukaan"}],
  steps:["8 minutes from boiling, cold water, peel."],
  tip:"Boil six on Sunday; they keep a week in the fridge.", why:"Zero-decision protein."},
 {id:"sn4", meal:"snack", serves:1, cuisine:"asia", name:"Edamame with sea salt", short:"Frozen pods, four minutes, salt.", time:5, kcal:120, protein:11, fibre:5,
@@ -1085,7 +1087,7 @@ const RECIPES = [
   time:8, kcal:370, protein:18, fibre:7,
   ingredients:[
     {t:"Ruisleipä", n:1, u:"viipale"},
-    {t:"Kananmuna", n:2, u:"kpl"},
+    {t:"Kananmuna", n:2, u:"kpl", b:"eggs"},
     {t:"Avokado", n:"½", u:"kpl"},
     {t:"Tomaatti", n:1, u:"kpl"},
     {t:"Sitruuna, mustapippuri", n:"", u:"maun mukaan"}
@@ -1126,7 +1128,7 @@ const RECIPES = [
   ingredients:[
     {t:"Riisinuudeli", n:50, u:"g", s:1},
     {t:"Miso (or 1 rkl soijaa + 1 tl hunajaa)", n:1, u:"rkl"},
-    {t:"Kananmuna", n:2, u:"kpl"},
+    {t:"Kananmuna", n:2, u:"kpl", b:"eggs"},
     {t:"Pinaatti", n:60, u:"g", s:1},
     {t:"Edamame, pakaste", n:60, u:"g", s:1},
     {t:"Kevätsipuli", n:1, u:"kpl"},

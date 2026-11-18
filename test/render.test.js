@@ -130,6 +130,31 @@ stored['mesa2.need.' + iso(MON)] = JSON.stringify({ [list.pantry[0].name]: 1 });
 const ticked = html(run('#/shop', { stored: stored }), 'shop');
 check('ticks and cupboard picks are restored', ticked.indexOf('data-id="' + first.name + '" checked') > -1 && ticked.indexOf('Cupboard, running low') > -1 && ticked.indexOf('data-need="' + list.pantry[0].name + '" checked') > -1);
 
+/* ---- rerolls and cooking ahead ---- */
+check('tonight can be rerolled from the ticket', t.indexOf('data-reroll="1" data-monday="' + iso(MON) + '"') > -1 && t.indexOf('Something else') > -1);
+check('every day of the week has a reroll button, and so does the week', count(week, 'class="reroll"') === 7 && week.indexOf('data-reroll="all"') > -1);
+check('an untouched week says nothing about changes', t.indexOf('class="swapped"') === -1 && week.indexOf('class="swapped"') === -1);
+const swapStore = {}; swapStore['mesa2.swap.' + iso(MON)] = '0100000';
+const swappedToday = html(run('#/', { stored: swapStore }), 'today');
+M.setSwaps(MON, '0100000');
+const swappedDinner = name(M.dayAt(NOW).plan.dinner), swappedList = M.shoppingList(MON, D.PEOPLE);
+M.setSwaps(MON, '0000000');
+check('a stored reroll changes tonight\'s dinner', swappedDinner !== name(plan.dinner) && swappedToday.indexOf(swappedDinner) > -1 && swappedToday.indexOf('>' + name(plan.dinner) + '<') === -1);
+check('…and says so, with a way to send it and a way back', swappedToday.indexOf('changed on this phone') > -1 && swappedToday.indexOf('data-send="' + iso(MON) + '"') > -1 && swappedToday.indexOf('data-unswap="' + iso(MON) + '"') > -1);
+const swappedShop = html(run('#/shop', { stored: swapStore }), 'shop');
+check('…and the shopping list follows', swappedList.aisles.every(a => a.items.every(i => swappedShop.indexOf('data-id="' + i.name + '"') > -1)));
+const linked = run('#/week/' + iso(MON) + '/0100000');
+check('a link from the other phone applies its week and remembers it', html(linked, 'week').indexOf(swappedDinner) > -1 && linked.store.getItem('mesa2.swap.' + iso(MON)) === '0100000' && linked['#toast'].textContent.indexOf('updated') > -1);
+M.setSwaps(MON, '0000000');     /* the stub shares one core.js between runs; a real page starts clean */
+check('a bad code in a link is ignored', html(run('#/week/' + iso(MON) + '/banana'), 'week').indexOf(name(plan.dinner)) > -1);
+const sessions = M.prepSessions(MON, D.PEOPLE);
+check('the week shows its cook-ahead evenings', sessions.length > 0 && week.indexOf('Get ahead') > -1 && count(week, 'class="session"') === sessions.length);
+const sunday = sessions.filter(x => x.offset === -1)[0];
+const sunHtml = html(run('#/day/' + iso(sunday.date)), 'today');
+check('Sunday evening lists the batch cooking for the week', count(sunHtml, 'data-prep="b') === M.batchTasks(sunday.date, D.PEOPLE).length && (sunday.tasks[0].key !== 'eggs' || /Boil \d+ eggs/.test(sunHtml)));
+const earlyDay = scan(x => x.index > 0 && !!M.RID[x.plan.dinner].early);
+check('a head start on tomorrow\'s dinner is offered as optional', html(run('#/day/' + iso(M.addDays(earlyDay, -1))), 'today').indexOf('optional, for ' + name(M.dayAt(earlyDay).plan.dinner)) > -1);
+
 /* ---- recipes ---- */
 const recipes = run('#/recipes');
 const N = D.RECIPES.length;

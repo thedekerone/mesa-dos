@@ -171,6 +171,17 @@ html[lang="fi"] .line-slot{flex-basis:5.6rem}
 .wday-what small{display:block;margin-top:3px;font-size:.8rem;color:var(--ink-2);line-height:1.35}
 .wday-meta{flex:0 0 auto;display:flex;flex-direction:column;align-items:flex-end;gap:4px;font-size:.8rem;color:var(--ink-2);white-space:nowrap}
 .wday-meta em{font-style:normal;font-weight:700;color:var(--ink);background:var(--aji);padding:1px 7px;border-radius:3px}
+.wrow{display:flex;align-items:stretch}
+.wrow .wday{flex:1;min-width:0}
+.reroll{flex:0 0 44px;border:0;background:none;cursor:pointer;color:var(--ink-2);display:grid;place-items:center;border-radius:10px}
+.reroll svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.swap{display:block;width:100%;margin-top:8px;min-height:44px;border:0;background:none;color:#d9cde3;font-weight:600;font-size:.95rem;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.swapped{margin:14px 0 0;padding:10px 12px;background:var(--card);border-left:5px solid var(--aji);border-radius:0 10px 10px 0;font-size:.9rem}
+.swapped .linkish{display:inline-block;margin-right:10px;padding:4px 0;font-weight:600}
+.session{font-size:1.15rem;margin:16px 0 2px}
+.session a{text-decoration:none}
+.plain li{padding:9px 0;border-bottom:1px solid var(--line)}
+.plain small{display:block;font-size:.8rem;color:var(--ink-2)}
 .pager{display:flex;justify-content:space-between;margin-top:18px;font-size:.92rem}
 .pager a{color:var(--morado);font-weight:600;padding:6px 0}
 .fridge{display:none}
@@ -287,6 +298,7 @@ html[lang="fi"] .line-slot{flex-basis:5.6rem}
   #view-today .ticket{grid-row:3/span 4;position:sticky;top:16px}
   #view-today .block{grid-column:2}
   #view-today .block:first-of-type{margin-top:0}
+  #view-today .swapped{grid-column:2;margin:0 0 20px}
   .people{grid-template-columns:1fr 1fr}
 }
 
@@ -297,7 +309,7 @@ html[lang="fi"] .line-slot{flex-basis:5.6rem}
 /* ---------- print ----------
    Week tab: one page for the fridge. Shopping tab: the list. Recipe: the recipe. */
 @media print{
-  .top,.nav,.toast,.screen-only,.back,.switch,.strip,.jump,.btn{display:none!important}
+  .top,.nav,.toast,.screen-only,.back,.switch,.strip,.jump,.btn,.swap,.swapped,.reroll{display:none!important}
   body{background:#fff;padding:0;font-size:11pt}
   main{padding:0;max-width:none}
   .view{max-width:none}

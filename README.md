@@ -12,6 +12,8 @@ No framework, no build step, no dependencies, no external fonts or CDNs. Five da
 
 - **Today.** Opens on today's date: tonight's dinner, how long it takes, how to split the pan between the two plates, the rest of the day's meals, and what has to happen tonight for tomorrow (stir the overnight oats, move the fish to the fridge, box the lunch portions).
 - **A new week every week.** There is no fixed menu. Each week is dealt from the 30 dinners so that nothing comes back within three weeks, every week has fish and a meatless dinner, and dishes that keep land on the cook-double days. The deal depends only on the date, so both phones show the same week without talking to each other.
+- **Reroll.** *Something else* on the Today ticket swaps tonight's dinner; every day on the Week screen has the same button, and the whole week can be rerolled. The shopping list follows. A reroll is saved on that phone, and *Send this week to the other phone* shares a link that carries it across.
+- **Get ahead.** Two evenings a week (Sunday and Wednesday) list what can be cooked in a batch and how long it keeps: boiled eggs, rice, poached chicken, quinoa, lentils. The evening before a dinner with a marinade or meatballs offers the head start.
 - **Two plates.** Each person has a daily kcal target. Everything is scaled from those two numbers: a 1 700 / 1 350 pair means one plate gets 56 % of every pot and the other 44 %. Nobody cooks a separate meal.
 - **Cook once, eat twice.** Where tomorrow's lunch is tonight's dinner, the day says "cook double", the recipe opens at four portions and the shopping list buys for four.
 - **Recipe screen.** Amounts for both of you, for one of you, with or without tomorrow's lunch. Tick ingredients and steps as you go. A switch keeps the screen on.
@@ -27,6 +29,7 @@ No framework, no build step, no dependencies, no external fonts or CDNs. Five da
 |---|---|
 | Names and daily targets | `assets/household.js` |
 | Which days are cooked double, when a day gets a top-up | `COOK_DOUBLE`, `DAY_KCAL`, `TOPUPS` in `assets/plan.js` |
+| What can be cooked ahead, on which evenings, and how long it keeps | `PREP_DAYS`, `BATCHES`, `BATCH_OF` in `assets/plan.js` |
 | Reshuffle every week from scratch | `ROTATION_START` in `assets/plan.js` (any Monday) |
 | What can turn up for dinner | add or remove dinners in `assets/recipes.js` |
 | A recipe | `assets/recipes.js` |
@@ -65,6 +68,7 @@ Names and targets can also be changed on the **Us** page, but that is saved on t
   ingredients:[{ t:"Naudan paistisuikale", n:300, u:"g", s:1 }],
   steps:["..."], tip:"...", why:"...",
   ahead:"...",   // optional: has to happen the night before; shown on the previous day
+  early:"...",   // optional: can be done the night before to save time
   from:"b5" }    // optional: a lunch built on that dinner, which then makes extra
 
 // a dealt day (core.js weekPlan) — nobody writes these by hand
@@ -85,6 +89,8 @@ Ingredients: `n` is the number, `u` the unit, `s:1` marks a bulk amount that fol
 3. Within the week, dishes with `keeps` go on the `COOK_DOUBLE` days (Mon, Tue, Thu, Sat) and become the next day's lunch; the longest cooks land on Saturday and Sunday. Sunday is never doubled, so a week's shopping covers exactly that week.
 4. Four breakfasts and four snacks are drawn for the week and repeated, which keeps the shopping list short. Lunches that are not leftovers are drawn from the lunch recipes.
 5. A day that comes out more than 150 kcal under `DAY_KCAL` gets the top-up that best fills the gap.
+
+6. A **reroll** is seven digits, one per day: how many times that day's dinner has been swapped. Each swap takes the next dish from a fixed shuffle of the dinners that are not on this week, last week or next week, keeping to dishes that keep where the original did so the lunches around it do not move. The code is stored as `mesa2.swap.<monday>` and travels in a link (`#/week/2026-11-16/0010000`).
 
 All of it is seeded by the week number, so it is the same on every device and the same tomorrow. Adding or removing a dinner, or moving `ROTATION_START`, reshuffles every week — including the current one.
 
@@ -152,7 +158,7 @@ Routes are in the hash (`#/`, `#/day/2026-11-18`, `#/week`, `#/shop`, `#/recipes
 Roughly in order of value:
 
 1. **Ticks do not travel between phones.** There is no server, so a shopping tick on one phone is unknown to the other. *Send the list* is the workaround. Anything better needs somewhere to keep shared state.
-2. **Swap or skip a dinner** from the phone. The week is dealt from the date so both phones agree; a swap made on one phone would not reach the other (see 1). A shareable "this week, but with X" link is the likely way.
+2. **Pick a dinner rather than reroll to it,** and skip a day (eating out). A reroll only offers the next dish in line.
 3. **Amounts inside the steps are not scaled.** "1.5 dl rice with 3 dl water" stays as written when the pot is doubled; the page says to go by the ingredient list.
 4. **The cupboard is not tracked.** The list shows what a week takes out of each staple, not what is left.
 5. **Full Finnish translation** of prose and method steps. Names, labels and controls are done; roughly 2,000 words of steps are not. English blocks are marked `lang="en"`.

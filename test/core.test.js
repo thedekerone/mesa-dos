@@ -130,6 +130,52 @@ const oatsEve = M.addDays(findDay(x => x.plan.bf === 'bf4' && x.index > 0), -1);
 check('the evening before overnight oats says to make them', M.prep(oatsEve).some(h => h.kind === 'ahead' && h.r.id === 'bf4'));
 check('an evening before a made lunch does not say to box anything', M.prep(M.addDays(findDay(x => x.index > 0 && !M.lunchFrom(x.plan)), -1)).every(h => h.kind !== 'box'));
 
+/* ---- rerolls ---- */
+const rw = M.addDays(start, 7 * 200);                /* a week nothing else in this file looks at */
+const dealtWeek = M.weekPlan(rw).map(p => p.dinner);
+const code1 = M.reroll(rw, 2), after1 = M.weekPlan(rw).map(p => p.dinner);
+check('rerolling a day changes that dinner and no other', code1 === '0010000' && after1[2] !== dealtWeek[2] && after1.every((x, i) => i === 2 || x === dealtWeek[i]));
+check('a rerolled week is still seven different dinners', new Set(after1).size === 7);
+const around = M.weekPlan(M.addDays(rw, -7)).concat(M.weekPlan(M.addDays(rw, 7))).map(p => p.dinner);
+check('the new dinner is not on last week or next week', around.indexOf(after1[2]) < 0);
+check('a dish that keeps is swapped for one that keeps, so the lunches stay put', !M.RID[after1[2]].keeps === !M.RID[dealtWeek[2]].keeps);
+check('the same code gives the same week on another phone', (function () {
+  const other = load().MESA; other.setSwaps(rw, code1);
+  return JSON.stringify(other.weekPlan(rw)) === JSON.stringify(M.weekPlan(rw));
+})());
+const seenAlt = new Set([after1[2]]);
+let turns = 1;
+while (M.reroll(rw, 2) !== '0000000' && turns < 12) { seenAlt.add(M.weekPlan(rw)[2].dinner); turns++; }
+check('rerolling goes through the alternatives and comes back to the dealt dinner', M.getSwaps(rw) === '0000000' && seenAlt.size === turns && turns >= 2 &&
+  JSON.stringify(M.weekPlan(rw).map(p => p.dinner)) === JSON.stringify(dealtWeek), turns + ' turns, ' + seenAlt.size + ' dishes');
+const all = M.reroll(rw, null), rolled = M.weekPlan(rw).map(p => p.dinner);
+check('rerolling the week changes every dinner', all === '1111111' && rolled.every((x, i) => x !== dealtWeek[i]) && new Set(rolled).size === 7);
+check('a rerolled week still shops and still has leftovers that are last night\'s dinner',
+  M.shoppingList(rw, PEOPLE).errors.length === 0 && M.weekPlan(rw).every((pd, i, days) => !pd.lunch.leftover || days[i - 1].dinner === pd.lunch.leftover));
+M.setSwaps(rw, 'nonsense');
+check('a bad code is the dealt week', M.getSwaps(rw) === '0000000' && JSON.stringify(M.weekPlan(rw).map(p => p.dinner)) === JSON.stringify(dealtWeek));
+
+/* ---- cooking ahead ---- */
+const sessions = mondays.slice(0, 26).map(mon => ({ mon, s: M.prepSessions(mon, PEOPLE) }));
+const tasks = [].concat(...sessions.map(x => [].concat(...x.s.map(s => s.tasks.map(t => ({ t, s, mon: x.mon }))))));
+check('there is something to cook ahead most weeks', sessions.filter(x => x.s.length).length >= 20);
+check('nothing is cooked further ahead than it keeps, and never for a day already gone',
+  tasks.every(x => x.t.days.every(dy => dy > x.s.offset && dy - x.s.offset <= x.t.keeps)));
+check('cook-ahead evenings are the Sunday before and the Wednesday', tasks.every(x => [6, 2].indexOf((x.s.date.getDay() + 6) % 7) > -1));
+const eggWeek = sessions.filter(x => x.s.some(s => s.tasks.some(t => t.key === 'eggs')))[0];
+const eggsPlanned = eggWeek.s.reduce((n, s) => n + s.tasks.filter(t => t.key === 'eggs').reduce((m, t) => m + t.amount, 0), 0);
+const eggsUsed = M.weekCooking(eggWeek.mon).reduce((n, c) => n + c.items.filter(i => i.b === 'eggs' || D.BATCH_OF[i.t] === 'eggs').reduce((m, i) => m + i.n * c.batches, 0), 0);
+check('boiled eggs are counted for both of you, and whole', eggsPlanned > 0 && eggsPlanned <= eggsUsed && eggsPlanned % 2 === 0, eggsPlanned + ' of ' + eggsUsed);
+check('Sunday evening\'s batch is for the week ahead', (function () {
+  const x = sessions.filter(y => y.s.some(s => s.offset === -1))[0];
+  return M.batchTasks(M.addDays(x.mon, -1), PEOPLE).length > 0 && M.batchTasks(M.addDays(x.mon, -1), PEOPLE).every(t => t.dates.every(dt => dt > M.addDays(x.mon, -1)));
+})());
+check('the paella rice is not batch-cooked', D.RECIPES.filter(r => r.id === 'es1')[0].ingredients.some(i => i.t === 'Täysjyväriisi' && i.b === 0));
+check('every batch has a keeping time and words in both languages', Object.keys(D.BATCHES).every(k => D.BATCHES[k].keeps >= 1 && D.SLOTS.en['batch_' + k] && D.SLOTS.fi['batch_' + k]) &&
+  Object.values(D.BATCH_OF).every(k => D.BATCHES[k]));
+const earlyEve = M.addDays(findDay(x => x.index > 0 && !!M.RID[x.plan.dinner].early), -1);
+check('a marinade that can start tonight is offered the evening before', M.prep(earlyEve).some(h => h.kind === 'early'));
+
 /* ---- a target from a body ---- */
 const big = M.suggest({ sex: 'm', kg: 90, cm: 180, age: 40, activity: 'low' });
 check('a fifth comes off when there is plenty to lose', big.cut === 0.2 && big.target === 1900 && big.maintenance === 2380, JSON.stringify(big));

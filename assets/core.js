@@ -115,14 +115,50 @@ var MESA = (function () {
     return (cycles[c] = weeks);
   }
 
-  var plans = {};
-  function weekPlan(mon) {
+  /* ---------- rerolls ----------
+     A week can be changed from what was dealt: seven digits, one per day, each saying how
+     many times that day's dinner has been rerolled. "0000000" is the dealt week. The code
+     is all there is to it, so it fits in a link and the other phone can be sent it. */
+  var swaps = {};
+  function cleanCode(code) {
+    code = /^\d{7}$/.test(code || "") ? code : "0000000";
+    return code;
+  }
+  function setSwaps(mon, code) {
+    code = cleanCode(code);
+    if (code === "0000000") delete swaps[iso(monday(mon))]; else swaps[iso(monday(mon))] = code;
+  }
+  function getSwaps(mon) { return swaps[iso(monday(mon))] || "0000000"; }
+  function dealt(wi) { var c = Math.floor(wi / CYCLE); return cycleWeeks(c)[wi - c * CYCLE]; }
+  /* what a day's dinner can be rerolled into: not on this week already, not dealt for the
+     week before or after, and — so the lunches around it stay put — a dish that keeps
+     only for a dish that keeps */
+  function alternatives(wi, i, slots) {
+    var near = dealt(wi - 1).concat(dealt(wi + 1));
+    var pool = DINNERS.filter(function (r) { return slots.indexOf(r) < 0 && near.indexOf(r) < 0; });
+    var same = pool.filter(function (r) { return !r.keeps === !slots[i].keeps; });
+    return shuffled(same.length ? same : pool, rng(15485863 * (wi + 5000) + i));
+  }
+  /* reroll one day (or with i == null, all seven) and return the week's new code */
+  function reroll(mon, i) {
     mon = monday(mon);
-    var key = iso(mon);
-    if (plans[key]) return plans[key];
-    var wi = weekIndex(mon), c = Math.floor(wi / CYCLE);
-    var dinners = cycleWeeks(c)[wi - c * CYCLE];
-    var rand = rng(104729 * (wi + 5000));
+    var code = getSwaps(mon).split(""), wi = weekIndex(mon);
+    for (var d = 0; d < 7; d++) {
+      if (i != null && d !== i) continue;
+      /* how many alternatives this day has, given the days before it as they stand */
+      var base = code.slice(); base[d] = "0";
+      setSwaps(mon, base.join(""));
+      var n = alternatives(wi, d, weekSlots(mon)).length;
+      code[d] = String((Number(code[d]) + 1) % Math.min(10, n + 1));
+    }
+    setSwaps(mon, code.join(""));
+    return getSwaps(mon);
+  }
+
+  /* the seven dinners of a week, in day order, rerolls applied */
+  function weekSlots(mon) {
+    mon = monday(mon);
+    var wi = weekIndex(mon), dinners = dealt(wi);
     var byTime = function (x, y) { return y.time - x.time; };
 
     /* Dishes that keep go on the cook-double days, the longest of them on Saturday.
@@ -132,6 +168,24 @@ var MESA = (function () {
     COOK_DOUBLE.slice().sort(function (x, y) { return y - x; }).forEach(function (d) { if (keepers.length) slots[d] = keepers.shift(); });
     others = others.concat(keepers);
     [6, 4, 2, 5, 3, 1, 0].forEach(function (d) { if (!slots[d] && others.length) slots[d] = others.shift(); });
+
+    var code = getSwaps(mon);
+    for (var i = 0; i < 7; i++) {
+      var k = Number(code.charAt(i));
+      if (!k) continue;
+      var alt = alternatives(wi, i, slots);
+      if (alt.length) slots[i] = alt[(k - 1) % alt.length];
+    }
+    return slots;
+  }
+
+  var plans = {};
+  function weekPlan(mon) {
+    mon = monday(mon);
+    var key = iso(mon) + getSwaps(mon);
+    if (plans[key]) return plans[key];
+    var wi = weekIndex(mon), slots = weekSlots(mon);
+    var rand = rng(104729 * (wi + 5000));
 
     /* four breakfasts and four snacks a week, repeated, so the shop stays short */
     var bfs = shuffled(ofMeal("breakfast"), rand).slice(0, 4), sns = shuffled(ofMeal("snack"), rand).slice(0, 4);
@@ -293,14 +347,14 @@ var MESA = (function () {
     for (var i = 0; i < 7; i++) {
       var d = addDays(mon, i), pd = dayAt(d).plan;
       var bf = RID[pd.bf], sn = RID[pd.snack], dn = RID[pd.dinner];
-      out.push({ name: bf.name, items: bf.ingredients, batches: 2 / bf.serves });
+      out.push({ day: i, name: bf.name, items: bf.ingredients, batches: 2 / bf.serves });
       if (pd.lunch.id) {
         var ln = RID[pd.lunch.id];
-        out.push({ name: ln.name, items: ln.ingredients, batches: 2 / ln.serves });
+        out.push({ day: i, name: ln.name, items: ln.ingredients, batches: 2 / ln.serves });
       }
-      out.push({ name: dn.name, items: dn.ingredients, batches: dinnerPortions(d) / dn.serves });
-      out.push({ name: sn.name, items: sn.ingredients, batches: 2 / sn.serves });
-      if (pd.extra) out.push({ name: pd.extra.text, items: pd.extra.items, batches: 2 });
+      out.push({ day: i, name: dn.name, items: dn.ingredients, batches: dinnerPortions(d) / dn.serves });
+      out.push({ day: i, name: sn.name, items: sn.ingredients, batches: 2 / sn.serves });
+      if (pd.extra) out.push({ day: i, name: pd.extra.text, items: pd.extra.items, batches: 2 });
     }
     return out;
   }
@@ -400,6 +454,52 @@ var MESA = (function () {
     }).join(" + ");
   }
 
+  /* ---------- cooking ahead ----------
+     Twice a week (PREP_DAYS) there is an evening for the things that keep: boiled eggs,
+     rice, poached chicken. Each use during the week is handed to the earliest of those
+     evenings that is before it and close enough for the food still to be good. */
+  function prepSessions(mon, people) {
+    mon = monday(mon);
+    var sz = size(people), sessions = PREP_DAYS.slice().sort(function (a, b) { return a - b; }).map(function (s) {
+      return { offset: s, date: addDays(mon, s), tasks: [] };
+    });
+    weekCooking(mon).forEach(function (c) {
+      c.items.forEach(function (ing) {
+        var key = ing.b != null ? ing.b : BATCH_OF[ing.t];
+        var a = key && BATCHES[key] ? amount(ing, c.batches, sz) : null;
+        if (a == null) return;
+        var s = sessions.filter(function (x) { return x.offset < c.day && c.day - x.offset <= BATCHES[key].keeps; })[0];
+        if (!s) return;
+        var t = s.tasks.filter(function (x) { return x.key === key; })[0];
+        if (!t) s.tasks.push(t = { key: key, amount: 0, unit: unitOf(ing), keeps: BATCHES[key].keeps, days: [] });
+        t.amount += a;
+        if (t.days.indexOf(c.day) < 0) t.days.push(c.day);
+      });
+    });
+    var order = Object.keys(BATCHES);
+    sessions.forEach(function (s) {
+      s.tasks.sort(function (x, y) { return order.indexOf(x.key) - order.indexOf(y.key); });
+      s.tasks.forEach(function (t) {
+        t.days.sort(function (x, y) { return x - y; });
+        t.dates = t.days.map(function (d) { return addDays(mon, d); });
+      });
+    });
+    return sessions.filter(function (s) { return s.tasks.length; });
+  }
+  /* the batch cooking that falls on this evening: Sunday's is for the week ahead */
+  function batchTasks(date, people) {
+    var key = iso(atNoon(date)), mon = monday(date), out = [];
+    prepSessions(mon, people).concat(prepSessions(addDays(mon, 7), people)).forEach(function (s) {
+      if (iso(s.date) === key) out = out.concat(s.tasks);
+    });
+    return out;
+  }
+  function amountText(a, u, lang) {
+    a = roundAmount(a, u);
+    var ut = unitText(u, a, lang, true);
+    return fmtNumber(a, lang) + (ut ? " " + ut : "");
+  }
+
   /* ---------- the night before ---------- */
   function prep(date) {
     var today = dayAt(date), next = dayAt(addDays(date, 1)), out = [];
@@ -407,7 +507,9 @@ var MESA = (function () {
       out.push({ kind: "box", r: RID[today.plan.dinner] });
     }
     meals(next.plan).forEach(function (m) {
-      if (!m.leftover && m.r.ahead) out.push({ kind: "ahead", r: m.r, slot: m.slot });
+      if (m.leftover) return;
+      if (m.r.ahead) out.push({ kind: "ahead", r: m.r, slot: m.slot });
+      if (m.r.early) out.push({ kind: "early", r: m.r, slot: m.slot });
     });
     return out;
   }
@@ -429,7 +531,8 @@ var MESA = (function () {
   }
 
   return {
-    RID: RID, AVG: AVG, CYCLE: CYCLE, weekPlan: weekPlan, weekIndex: weekIndex, weekCuisines: weekCuisines,
+    RID: RID, AVG: AVG, CYCLE: CYCLE, weekPlan: weekPlan, setSwaps: setSwaps, getSwaps: getSwaps, reroll: reroll,
+    prepSessions: prepSessions, batchTasks: batchTasks, amountText: amountText, weekIndex: weekIndex, weekCuisines: weekCuisines,
     atNoon: atNoon, addDays: addDays, iso: iso, parseISO: parseISO, monday: monday,
     daysBetween: daysBetween, weekOf: weekOf, dayAt: dayAt,
     meals: meals, dayTotals: dayTotals, mult: mult, shares: shares, size: size,
