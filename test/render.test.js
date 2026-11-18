@@ -166,9 +166,9 @@ check('the new cuisines can be filtered', ['Mexican', 'Indian', 'Middle Eastern'
 /* ---- one recipe ---- */
 const salmon = html(run('#/recipe/a4/4'), 'recipe');
 check('a recipe opened for four doubles the pot', salmon.indexOf('Makes 4 portions') > -1 && salmon.indexOf('>600 g<') > -1 && salmon.indexOf('>4 cloves<') > -1 && salmon.indexOf('>3 dl<') > -1);
-check('…and warns that the steps were written for two', salmon.indexOf('written for 2') > -1);
+check('…including the amounts inside the steps', salmon.indexOf('<b class="scaled">3 dl</b> with <b class="scaled">6 dl</b> water') > -1 && salmon.indexOf('written for 2') > -1);
 const salmon2 = html(run('#/recipe/a4'), 'recipe');
-check('opened plainly it is the recipe as written', salmon2.indexOf('Makes 2 portions') > -1 && salmon2.indexOf('recipe as written') > -1 && salmon2.indexOf('>300 g<') > -1 && salmon2.indexOf('written for 2') === -1);
+check('opened plainly it is the recipe as written', salmon2.indexOf('Makes 2 portions') > -1 && salmon2.indexOf('recipe as written') > -1 && salmon2.indexOf('>300 g<') > -1 && salmon2.indexOf('written for 2') === -1 && salmon2.indexOf('1.5 dl with 3 dl water') > -1 && salmon2.indexOf('class="scaled"') === -1);
 check('ingredients and steps can be ticked', count(salmon, 'data-ing="') === 11 && count(salmon, 'data-step="') === 5);
 const eggs = html(run('#/recipe/bf3'), 'recipe');
 check('a breakfast written for one is made for both', eggs.indexOf('Makes 2 portions') > -1 && eggs.indexOf('>6<') > -1 && eggs.indexOf('Plus tomorrow') === -1);

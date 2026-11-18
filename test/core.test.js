@@ -92,6 +92,17 @@ check('a kilo is a kilo', q({ t: 'x', n: 500, u: 'g', s: 1 }, 2, 1, 'en') === '1
 check('"to taste" stays words', q({ t: 'x', n: '', u: 'maun mukaan' }, 2, 1, 'en') === 'to taste' && q({ t: 'x', n: '', u: 'maun mukaan' }, 2, 1, 'fi') === 'maun mukaan');
 check('slices have one unit however the recipe spells it', q({ t: 'x', n: 2, u: 'viipaletta' }, 1, 1, 'en') === '2 slices' && q({ t: 'x', n: 1, u: 'viipale' }, 1, 1, 'fi') === '1 viipale');
 
+/* ---- amounts inside the method ---- */
+const st = (t, b) => M.scaleStep(t, b, 'en').map(p => p.scaled ? '[' + p.text + ']' : p.text).join('');
+check('amounts in a step double with the pot', st('Rice on: 1.5 dl with 3 dl water, lid on, 12 min, then rest 10 min.', 2) === 'Rice on: [3 dl] with [6 dl] water, lid on, 12 min, then rest 10 min.');
+check('…and halve for one person', st('Simmer in 5 dl water 15 min.', 0.5) === 'Simmer in [2½ dl] water 15 min.');
+check('counts of things you shape follow too', st('Roll 16 small balls with wet hands. Bake 15 min at 220 °C.', 2) === 'Roll [32 small balls] with wet hands. Bake 15 min at 220 °C.');
+check('times, temperatures and sizes are never touched', st('Oven 220 °C, 12–14 min, 2 cm thick, 30 s.', 2) === 'Oven 220 °C, 12–14 min, 2 cm thick, 30 s.');
+check('a recipe made as written is left exactly as written', st('Add 1 rkl soy and 3 rkl water.', 1) === 'Add 1 rkl soy and 3 rkl water.');
+const stepNumbers = [];
+RECIPES.forEach(r => r.steps.forEach(s => { const left = M.scaleStep(s, 2, 'en').filter(p => !p.scaled).map(p => p.text).join(' '); const m = left.match(/\d+(?:[.,]\d+)?\s?(?:dl|rkl|tl|g|kg|ml|l)\b|\d+ (?:small |short )?(?:balls|sausages)/); if (m) stepNumbers.push(r.id + ': ' + m[0]); }));
+check('no step in any recipe has an amount that stays behind when the pot is doubled', stepNumbers.length === 0, stepNumbers.join('; '));
+
 /* ---- the shopping list ---- */
 const lists = mondays.map(mon => M.shoppingList(mon, PEOPLE));
 const errors = [].concat(...lists.map(l => l.errors));

@@ -242,6 +242,7 @@ html[lang="fi"] .line-slot{flex-basis:5.6rem}
 .steps{counter-reset:step}
 .steps .check{padding:14px 0}
 .steps .check-text{font-size:1.06rem;line-height:1.55}
+.scaled{background:var(--aji);padding:0 4px;border-radius:4px;white-space:nowrap}
 .steps input{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;border-color:var(--ink);background:var(--ink)}
 .steps li{counter-increment:step}
 .steps input::before{content:counter(step);color:#fff;font-weight:700;font-size:.9rem;line-height:1}

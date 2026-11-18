@@ -331,6 +331,26 @@ var MESA = (function () {
     return fmtNumber(a, lang) + (ut ? " " + ut : "");
   }
 
+  /* The method is prose, and prose mentions amounts: "1.5 dl with 3 dl water", "roll 16
+     small balls". Cut a step into plain text and the numbers that have to follow the
+     batch count, so a doubled recipe reads doubled all the way down. Times, temperatures
+     and amounts written as words are left alone. */
+  var STEP_AMOUNT = /(\d+(?:[.,]\d+)?|[½¼¾])(\s?)(kg|g|dl|ml|l|rkl|tl|tbsp|tsp)\b|(\d+)(\s)((?:small |short )?(?:balls|sausages|patties))\b/g;
+  function scaleStep(text, batches, lang) {
+    var out = [], last = 0, m;
+    STEP_AMOUNT.lastIndex = 0;
+    while ((m = STEP_AMOUNT.exec(text))) {
+      var n = num(m[1] != null ? m[1] : m[4]), unit = m[1] != null ? m[3] : "kpl";
+      if (n == null || Math.abs(batches - 1) < 0.001) continue;
+      var scaled = fmtNumber(roundAmount(n * batches, unit), lang) + (m[1] != null ? m[2] + m[3] : m[5] + m[6]);
+      if (m.index > last) out.push({ text: text.slice(last, m.index) });
+      out.push({ text: scaled, scaled: true });
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) out.push({ text: text.slice(last) });
+    return out;
+  }
+
   /* ---------- names ---------- */
   function enOf(s) {
     if (s == null || s === "") return s;
@@ -537,7 +557,7 @@ var MESA = (function () {
     daysBetween: daysBetween, weekOf: weekOf, dayAt: dayAt,
     meals: meals, dayTotals: dayTotals, mult: mult, shares: shares, size: size,
     lunchFrom: lunchFrom, dinnerPortions: dinnerPortions,
-    num: num, amount: amount, qtyText: qtyText, fmtNumber: fmtNumber, unitText: unitText, enOf: enOf,
+    num: num, amount: amount, qtyText: qtyText, scaleStep: scaleStep, fmtNumber: fmtNumber, unitText: unitText, enOf: enOf,
     weekCooking: weekCooking, shoppingList: shoppingList, buyText: buyText, pantryText: pantryText,
     prep: prep, maintenance: maintenance, suggest: suggest
   };

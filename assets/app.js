@@ -585,7 +585,9 @@
     }).join("");
     var steps = r.steps.map(function (s, i) {
       return '<li><label class="check"><input type="checkbox" data-step="' + i + '"' + (ticks.step[i] ? " checked" : "") + '>' +
-        '<span class="check-text">' + esc(s) + '</span></label></li>';
+        '<span class="check-text">' + M.scaleStep(s, c.batches, "en").map(function (part) {
+          return part.scaled ? '<b class="scaled">' + esc(part.text) + '</b>' : esc(part.text);
+        }).join("") + '</span></label></li>';
     }).join("");
 
     var plate = c.solo
